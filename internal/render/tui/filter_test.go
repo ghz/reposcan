@@ -63,6 +63,40 @@ func TestReposFilterNoMatchesCanBeAccepted(t *testing.T) {
 	}
 }
 
+func TestReposFilterFiltersCurrentFolderView(t *testing.T) {
+	m := newTestModelWithRepos(t, nil)
+	m.reposTable.SetFolders([]report.FolderEntry{
+		{Name: "alpha", Path: "/repos/alpha"},
+		{Name: "beta-tools", Path: "/repos/beta-tools"},
+		{Name: "gamma", Path: "/repos/gamma"},
+	}, nil)
+
+	m.pushFocus(FocusReposFilter)
+	m.reposFilter.SetValue("beta")
+	m.reposTable.Filter("beta")
+
+	if got := m.reposTable.ReposCount(); got != 1 {
+		t.Fatalf("filtered folder count = %d, want 1", got)
+	}
+	entry := m.reposTable.GetCurrentFolderEntry()
+	if entry == nil || entry.Name != "beta-tools" {
+		t.Fatalf("selected folder after filtering = %#v, want beta-tools", entry)
+	}
+
+	updated, _ := m.updateReposFilter(tea.KeyMsg{Type: tea.KeyEnter})
+	got := updated.(Model)
+
+	if got.IsReposFilterVisible() {
+		t.Fatal("filter is still visible after enter")
+	}
+	if count := got.reposTable.ReposCount(); count != 3 {
+		t.Fatalf("folder count after accepting filter = %d, want 3", count)
+	}
+	if entry := got.reposTable.GetCurrentFolderEntry(); entry == nil || entry.Name != "alpha" {
+		t.Fatalf("selected folder after clearing filter = %#v, want alpha", entry)
+	}
+}
+
 func newTestModelWithRepos(t *testing.T, repos []report.RepoState) Model {
 	t.Helper()
 

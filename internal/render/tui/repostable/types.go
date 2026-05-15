@@ -30,5 +30,6 @@ type Model struct {
 
 	// folders mode
 	folders          []report.FolderEntry
+	filteredFolders  []report.FolderEntry
 	repoStatesByPath map[string]report.RepoState
 }

@@ -82,12 +82,7 @@ func (m *Model) SetFolders(folders []report.FolderEntry, repoStates []report.Rep
 		m.repoStatesByPath[rs.Path] = rs
 	}
 
-	rows := createFolderRows(folders, m.repoStatesByPath, m.theme)
-	if len(rows) == 0 {
-		rows = []table.Row{{"", "", ""}}
-	}
-	m.tbl.SetRows(rows)
-	m.tbl.SetCursor(0)
+	m.Filter(m.filterQuery)
 }
 
 func (m *Model) UpdateWindowSize(width int, height int) Model {
@@ -104,6 +99,15 @@ func (m *Model) UpdateWindowSize(width int, height int) Model {
 // Filter filters repo states based on repo name. Then update table based on filtered repos
 func (m *Model) Filter(query string) {
 	m.filterQuery = query
+	if m.displayMode == tableDisplayFolders {
+		m.filterFolders(query)
+		return
+	}
+
+	m.filterRepos(query)
+}
+
+func (m *Model) filterRepos(query string) {
 	q := strings.ToLower(strings.TrimSpace(query))
 	if len(q) == 0 {
 		m.filteredRepos = m.report.RepoStates
@@ -140,6 +144,35 @@ func (m *Model) Filter(query string) {
 	m.tbl.SetRows(rows)
 
 	if cursorPosition < len(m.filteredRepos) {
+		m.tbl.SetCursor(cursorPosition)
+	} else {
+		m.tbl.SetCursor(0)
+	}
+}
+
+func (m *Model) filterFolders(query string) {
+	q := strings.ToLower(strings.TrimSpace(query))
+	if len(q) == 0 {
+		m.filteredFolders = m.folders
+	} else {
+		m.filteredFolders = []report.FolderEntry{}
+		for _, f := range m.folders {
+			if strings.Contains(strings.ToLower(f.Name), q) ||
+				strings.Contains(strings.ToLower(f.Path), q) {
+				m.filteredFolders = append(m.filteredFolders, f)
+			}
+		}
+	}
+
+	cursorPosition := m.tbl.Cursor()
+
+	rows := createFolderRows(m.filteredFolders, m.repoStatesByPath, m.theme)
+	if len(rows) == 0 {
+		rows = []table.Row{{"", "", ""}}
+	}
+	m.tbl.SetRows(rows)
+
+	if cursorPosition < len(m.filteredFolders) {
 		m.tbl.SetCursor(cursorPosition)
 	} else {
 		m.tbl.SetCursor(0)
@@ -185,7 +218,7 @@ func (m *Model) SetCursorByRepoID(id string) bool {
 
 func (rt *Model) ReposCount() int {
 	if rt.displayMode == tableDisplayFolders {
-		return len(rt.folders)
+		return len(rt.filteredFolders)
 	}
 	return len(rt.filteredRepos)
 }
@@ -227,10 +260,10 @@ func (m *Model) GetCurrentFolderEntry() *report.FolderEntry {
 		return nil
 	}
 	i := m.tbl.Cursor()
-	if i < 0 || i >= len(m.folders) {
+	if i < 0 || i >= len(m.filteredFolders) {
 		return nil
 	}
-	return &m.folders[i]
+	return &m.filteredFolders[i]
 }
 
 // GetCurrentFolderRepoState returns the RepoState for the currently selected
