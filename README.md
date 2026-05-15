@@ -100,7 +100,7 @@ Launch the TUI with the default `interactive` output:
 reposcan
 ```
 
-### View modes — `Tab` to cycle
+### View modes — `←` / `→` to switch
 
 | Mode | Description |
 |---|---|
@@ -114,7 +114,7 @@ reposcan
 | Key | Action |
 |---|---|
 | `↑` / `↓` or `j` / `k` | Navigate |
-| `Tab` | Cycle view mode |
+| `←` / `→` or `h` / `l` | Switch view mode |
 | `d` | Toggle details panel: **file changes** ↔ **recent commits** |
 | `n` | Create a new repo from selected folder (local or GitHub) |
 | `o` | Open selected repo/folder in editor (VS Code by default) |

@@ -43,6 +43,10 @@ func (v ViewMode) Next() ViewMode {
 	return (v + 1) % 4
 }
 
+func (v ViewMode) Prev() ViewMode {
+	return (v + 3) % 4
+}
+
 type Model struct {
 	// Loading stuff
 	loading bool

@@ -34,7 +34,6 @@ func shellEscapePath(path string) string {
 // applyViewMode updates the repos table to reflect the current view mode using
 // the full (unfiltered) scan report stored in the model.
 func (m *Model) applyViewMode() {
-	m.reposTable.SetTitle(m.viewMode.Label())
 	switch m.viewMode {
 	case ViewModeDirty:
 		filtered := filterDirtyRepos(m.fullReport)

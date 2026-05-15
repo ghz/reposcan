@@ -58,7 +58,6 @@ func Render(
 		totalHeight*sizeReposTableHeightPercent/100,
 	)
 	reposTable.SetFavorites(configs.Favorites)
-	reposTable.SetTitle(ViewModeDirty.Label())
 
 	reposTableHeader := rth.Header{
 		Theme: theme,

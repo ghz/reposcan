@@ -62,10 +62,6 @@ func (m *Model) SetReport(report report.ScanReport) {
 	m.Filter(m.filterQuery)
 }
 
-func (m *Model) SetTitle(title string) {
-	m.title = title
-}
-
 // SetFavorites updates the set of pinned repo paths and refreshes the table.
 func (m *Model) SetFavorites(paths []string) {
 	m.favorites = make(map[string]bool, len(paths))

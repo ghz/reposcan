@@ -13,7 +13,6 @@ func (m Model) View() string {
 		Render(m.tbl.View())
 
 	body = m.addIndicator(body)
-	body = m.addSectionTitle(body)
 
 	return body
 }
@@ -31,21 +30,6 @@ func (m Model) addIndicator(body string) string {
 		lipgloss.Width(body), lipgloss.Height(body),
 		2, 0,
 		repoIndicator, body,
-		false,
-		overlay.WithWhitespaceChars(" "),
-	)
-}
-
-func (m Model) addSectionTitle(body string) string {
-	title := m.title
-	if title == "" {
-		title = "repos"
-	}
-	return overlay.PlaceOverlayWithPositionAndPadding(
-		overlay.OverlayPositionTopLeft,
-		lipgloss.Width(body), lipgloss.Height(body),
-		2, 0,
-		title, body,
 		false,
 		overlay.WithWhitespaceChars(" "),
 	)

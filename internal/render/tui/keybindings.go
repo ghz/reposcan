@@ -11,11 +11,6 @@ var reposTableKeybindings = []common.Keybinding{
 		ShortDesc:   "Navigate",
 	},
 	{
-		Key:         "tab",
-		Description: "Cycle view: non-sync → all repos → all dirs",
-		ShortDesc:   "View",
-	},
-	{
 		Key:         "S",
 		Description: "Quick save: git add . + commit wip + push",
 		ShortDesc:   "Quick save",

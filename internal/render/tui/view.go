@@ -22,7 +22,10 @@ func (m Model) View() string {
 	footerHeight := m.stableFooterHeight(footer)
 	footer = lipgloss.NewStyle().Width(m.width).Height(footerHeight).Render(footer)
 
-	bodyHeight := m.height - footerHeight
+	tabBar := m.tabBarView()
+	tabBarHeight := lipgloss.Height(tabBar)
+
+	bodyHeight := m.height - footerHeight - tabBarHeight
 
 	reposTableHeight := bodyHeight * sizeReposTableHeightPercent / 100
 	m.reposTable = m.reposTable.UpdateWindowSize(m.width, reposTableHeight)
@@ -38,7 +41,7 @@ func (m Model) View() string {
 		MaxHeight(bodyHeight).
 		Render(body)
 
-	view := lipgloss.JoinVertical(lipgloss.Left, body, footer)
+	view := lipgloss.JoinVertical(lipgloss.Left, tabBar, body, footer)
 
 	view = lipgloss.NewStyle().
 		Width(m.width).
@@ -134,6 +137,52 @@ func (m *Model) stableFooterHeight(actualFooter string) int {
 		return ref
 	}
 	return actual
+}
+
+// tabBarView renders a horizontal bar with every ViewMode, highlighting the
+// active one. It mirrors what the "tab" key cycles through.
+func (m *Model) tabBarView() string {
+	modes := []ViewMode{
+		ViewModeDirty,
+		ViewModeAllRepos,
+		ViewModeAllDirs,
+		ViewModeNonRepoDirs,
+	}
+
+	tabs := make([]string, 0, len(modes))
+	for _, mode := range modes {
+		label := mode.Label()
+		if label != "" {
+			label = strings.ToUpper(label[:1]) + label[1:]
+		}
+
+		style := m.theme.Styles.Base.Padding(0, 1)
+		if mode == m.viewMode {
+			style = style.
+				Foreground(m.theme.Colors.Background).
+				Background(m.theme.Colors.Accent).
+				Bold(true)
+		} else {
+			style = style.Foreground(m.theme.Colors.Muted)
+		}
+		tabs = append(tabs, style.Render(label))
+	}
+
+	tabsBlock := lipgloss.JoinHorizontal(lipgloss.Top, tabs...)
+	hint := m.theme.Styles.Muted.Render("← → switch view ")
+
+	gap := m.width - lipgloss.Width(tabsBlock) - lipgloss.Width(hint)
+	if gap < 1 {
+		gap = 1
+	}
+
+	bar := lipgloss.JoinHorizontal(
+		lipgloss.Top,
+		tabsBlock,
+		strings.Repeat(" ", gap),
+		hint,
+	)
+	return lipgloss.NewStyle().Width(m.width).MaxWidth(m.width).Render(bar)
 }
 
 // renderAlerts take list of alerts, calculate each alert y position and render it (it it's visible). Overlay each alert on top of main [view] (bg view)

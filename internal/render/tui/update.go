@@ -44,8 +44,12 @@ func (m Model) updateReposTable(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, gitPush(m)
 		case "F":
 			return m, gitFetch(m)
-		case "tab":
+		case "right", "l":
 			m.viewMode = m.viewMode.Next()
+			m.applyViewMode()
+			return m, nil
+		case "left", "h":
+			m.viewMode = m.viewMode.Prev()
 			m.applyViewMode()
 			return m, nil
 		case "o":

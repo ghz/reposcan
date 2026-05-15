@@ -18,8 +18,7 @@ type Model struct {
 	height int
 	theme  theme.Theme
 
-	tbl   table.Model
-	title string
+	tbl table.Model
 
 	displayMode tableDisplayMode
 
