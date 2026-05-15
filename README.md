@@ -34,13 +34,23 @@ https://github.com/user-attachments/assets/1c8370c6-3b94-4490-bc96-fc179ef14f1d
 
 ### Install script (recommended)
 
-The easiest way to install `reposcan`. Detects your OS and architecture automatically and installs the latest release binary into a directory on your `$PATH`:
+The easiest way to install `reposcan`. Detects your OS and architecture automatically and installs the latest release binary.
+
+**Linux / macOS** — installs into a directory on your `$PATH`:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/mabd-dev/reposcan/main/install.sh | sh
 ```
 
 Supports **linux/amd64**, **darwin/amd64**, and **darwin/arm64**.
+
+**Windows** — installs into `%LOCALAPPDATA%\reposcan` and adds it to your user `PATH`:
+
+```powershell
+irm https://raw.githubusercontent.com/mabd-dev/reposcan/main/install.ps1 | iex
+```
+
+Supports **windows/amd64**.
 
 
 #### Migrating from `go install`
@@ -64,7 +74,12 @@ curl -fsSL https://raw.githubusercontent.com/mabd-dev/reposcan/main/install.sh |
 ```sh
 git clone https://github.com/mabd-dev/reposcan.git
 cd reposcan
+
+# Linux / macOS
 go build -o reposcan .
+
+# Windows
+go build -o reposcan.exe .
 ```
 
 
@@ -99,9 +114,14 @@ reposcan --help
 More details on flags and config mapping can be found in [docs/cli-flags.md](docs/cli-flags.md).
 
 ## ⚙️ Configuration
-By default, `reposcan` looks for a config file in: 
+By default, `reposcan` looks for a config file in:
+
 ```sh
+# Linux / macOS
 ~/.config/reposcan/config.toml
+
+# Windows
+%USERPROFILE%\.config\reposcan\config.toml
 ```
 
 Example
@@ -148,7 +168,8 @@ Each step overrides the one before it
 - [x] Export Report to json file
 - [x] Support dirignore
 - [x] Worker pool for speed
-- [ ] Support git worktrees
+- [x] Windows support
+- [x] Support git worktrees
 - [ ] Perform git push/pull/fetch on repos
 - [ ] Show branches with their states on each repo
 

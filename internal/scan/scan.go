@@ -60,8 +60,8 @@ func isGitRepo(path string) bool {
 		if file.IsDir() {
 			return true
 		} else {
-			// git worktrees has gitdir: folder
-			b, err := os.ReadFile(path)
+			// git worktrees and submodules use a .git file containing "gitdir: ..."
+			b, err := os.ReadFile(gitPath)
 			if err != nil {
 				return false
 			}

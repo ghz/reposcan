@@ -35,6 +35,29 @@ func TestFindGitRepos_FindsDotGitDirs(t *testing.T) {
 	}
 }
 
+func TestFindGitRepos_FindsWorktrees(t *testing.T) {
+	root := t.TempDir()
+
+	// normal repo
+	repo1 := filepath.Join(root, "repo1")
+	touchDir(t, filepath.Join(repo1, ".git"))
+
+	// worktree: .git is a file containing "gitdir: ..."
+	wt := filepath.Join(root, "worktree1")
+	makeDir(t, wt)
+	if err := os.WriteFile(filepath.Join(wt, ".git"), []byte("gitdir: /some/repo/.git/worktrees/worktree1\n"), 0o644); err != nil {
+		t.Fatalf("write .git file: %v", err)
+	}
+
+	repos, warnings := FindGitRepos([]string{root}, nil)
+	if len(warnings) != 0 {
+		t.Fatalf("unexpected warnings: %v", warnings)
+	}
+	if len(repos) != 2 {
+		t.Fatalf("expected 2 repos (1 normal + 1 worktree), got %d: %v", len(repos), repos)
+	}
+}
+
 func TestFindGitRepos_RespectsDirIgnore(t *testing.T) {
 	root := t.TempDir()
 	// repo outside ignored path
