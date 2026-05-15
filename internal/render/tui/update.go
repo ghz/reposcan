@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"os/exec"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -37,6 +38,13 @@ func (m Model) updateReposTable(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "tab":
 			m.viewMode = m.viewMode.Next()
 			m.applyViewMode()
+			return m, nil
+		case "o":
+			path := m.reposTable.GetCurrentPath()
+			if path != "" {
+				cmd := exec.Command("code", path)
+				_ = cmd.Start()
+			}
 			return m, nil
 		case "d":
 			m.repoDetails.ToggleSubMode(m.reposTable.GetCurrentRepoState())

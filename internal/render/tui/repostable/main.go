@@ -168,6 +168,23 @@ func (m *Model) GetRepoStateAt(index int) *report.RepoState {
 	return &m.filteredRepos[index]
 }
 
+// GetCurrentPath returns the filesystem path of the currently selected item,
+// regardless of whether the table is in repos or folders mode.
+func (m *Model) GetCurrentPath() string {
+	if m.displayMode == tableDisplayFolders {
+		entry := m.GetCurrentFolderEntry()
+		if entry == nil {
+			return ""
+		}
+		return entry.Path
+	}
+	rs := m.GetCurrentRepoState()
+	if rs == nil {
+		return ""
+	}
+	return rs.Path
+}
+
 // GetCurrentFolderEntry returns the FolderEntry at the current cursor in folders mode.
 func (m *Model) GetCurrentFolderEntry() *report.FolderEntry {
 	if m.displayMode != tableDisplayFolders {

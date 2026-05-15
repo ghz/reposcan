@@ -21,6 +21,11 @@ var reposTableKeybindings = []common.Keybinding{
 		ShortDesc:   "Details",
 	},
 	{
+		Key:         "o",
+		Description: "Open in VS Code",
+		ShortDesc:   "Open",
+	},
+	{
 		Key:         "c",
 		Description: "Copy repo path to clipboard",
 		ShortDesc:   "Copy Path",
