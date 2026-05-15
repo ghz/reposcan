@@ -21,7 +21,8 @@ func New(
 	}
 }
 
-func (m *Model) UpdateSize(height int) {
+func (m *Model) UpdateSize(width, height int) {
+	m.width = width
 	m.height = height
 }
 

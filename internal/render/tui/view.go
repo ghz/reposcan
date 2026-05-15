@@ -32,7 +32,7 @@ func (m Model) View() string {
 	reposTable := m.reposTable.View()
 
 	m.repoDetails.UpdateData(m.reposTable.GetCurrentRepoState())
-	m.repoDetails.UpdateSize(bodyHeight - reposTableHeight)
+	m.repoDetails.UpdateSize(m.width, bodyHeight-reposTableHeight)
 	reposDetails := m.repoDetails.View()
 
 	body := lipgloss.JoinVertical(lipgloss.Left, reposTable, reposDetails)

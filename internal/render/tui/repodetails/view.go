@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/muesli/reflow/truncate"
 )
 
 func (m *Model) View() string {
@@ -20,6 +21,18 @@ func (m *Model) View() string {
 	default:
 		return m.viewFiles()
 	}
+}
+
+// join truncates every line to the panel width (ANSI-aware, with an ellipsis
+// tail) before stacking them, so long commit messages or README lines can't
+// wrap and push the rest of the layout off-screen.
+func (m *Model) join(lines []string) string {
+	if m.width > 0 {
+		for i, l := range lines {
+			lines[i] = truncate.StringWithTail(l, uint(m.width), "…")
+		}
+	}
+	return lipgloss.JoinVertical(lipgloss.Left, lines...)
 }
 
 // viewTabs renders the file-changes / recent-commits / readme switch as a tab
@@ -79,7 +92,7 @@ func (m *Model) viewFiles() string {
 		lines = append(lines, m.theme.Styles.Muted.Render("    no changes"))
 	}
 
-	return lipgloss.JoinVertical(lipgloss.Left, lines...)
+	return m.join(lines)
 }
 
 func (m *Model) viewCommits() string {
@@ -92,7 +105,7 @@ func (m *Model) viewCommits() string {
 
 	if len(m.commits) == 0 {
 		lines = append(lines, m.theme.Styles.Muted.Render("    no commits"))
-		return lipgloss.JoinVertical(lipgloss.Left, lines...)
+		return m.join(lines)
 	}
 
 	commits := m.commits
@@ -111,7 +124,7 @@ func (m *Model) viewCommits() string {
 		lines = append(lines, m.theme.Styles.Muted.Render("  ... (+"+strconv.Itoa(more)+" more)"))
 	}
 
-	return lipgloss.JoinVertical(lipgloss.Left, lines...)
+	return m.join(lines)
 }
 
 func (m *Model) viewReadme() string {
@@ -124,7 +137,7 @@ func (m *Model) viewReadme() string {
 
 	if len(m.readme) == 0 {
 		lines = append(lines, m.theme.Styles.Muted.Render("    no README found"))
-		return lipgloss.JoinVertical(lipgloss.Left, lines...)
+		return m.join(lines)
 	}
 
 	content := m.readme
@@ -143,5 +156,5 @@ func (m *Model) viewReadme() string {
 		lines = append(lines, m.theme.Styles.Muted.Render("  ... (+"+strconv.Itoa(more)+" more)"))
 	}
 
-	return lipgloss.JoinVertical(lipgloss.Left, lines...)
+	return m.join(lines)
 }

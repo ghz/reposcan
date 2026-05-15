@@ -16,6 +16,7 @@ const (
 )
 
 type Model struct {
+	width   int
 	height  int
 	subMode DetailsSubMode
 	commits []string
