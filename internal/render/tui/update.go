@@ -88,6 +88,7 @@ func (m Model) updateReposTable(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			m.createRepoFolderPath = entry.Path
 			m.createRepoNameInput.SetValue(entry.Name)
+			m.createStep = stepChooseKind
 			m.pushFocus(FocusCreateRepoPopup)
 			return m, nil
 		case "d":
@@ -176,29 +177,57 @@ func (m Model) keybindingPopup(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) updateCreateRepoPopup(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
+	keyMsg, isKey := msg.(tea.KeyMsg)
+	if !isKey {
+		var cmd tea.Cmd
+		m.createRepoNameInput, cmd = m.createRepoNameInput.Update(msg)
+		return m, cmd
+	}
+
+	if m.createStep == stepChooseKind {
+		switch keyMsg.String() {
 		case "esc", "ctrl+c":
 			m.popFocus(true)
-			return m, nil
-		case "l", "p", "u":
-			name := strings.TrimSpace(m.createRepoNameInput.Value())
-			if name == "" {
-				return m, nil
-			}
-			path := m.createRepoFolderPath
-			m.popFocus(true)
-			switch msg.String() {
-			case "l":
-				return m, createLocalRepoCmd(path)
-			case "p":
-				return m, createGitHubRepoCmd(name, path, true)
-			case "u":
-				return m, createGitHubRepoCmd(name, path, false)
-			}
+		case "1":
+			m.createKind = kindLocal
+			m.createStep = stepEnterName
+		case "2":
+			m.createKind = kindGHPrivate
+			m.createStep = stepEnterName
+		case "3":
+			m.createKind = kindGHPublic
+			m.createStep = stepEnterName
 		}
+		return m, nil
 	}
+
+	// stepEnterName
+	switch keyMsg.String() {
+	case "ctrl+c":
+		m.popFocus(true)
+		return m, nil
+	case "esc":
+		m.createStep = stepChooseKind
+		return m, nil
+	case "enter":
+		name := strings.TrimSpace(m.createRepoNameInput.Value())
+		if name == "" {
+			return m, nil
+		}
+		path := m.createRepoFolderPath
+		kind := m.createKind
+		m.popFocus(true)
+		switch kind {
+		case kindLocal:
+			return m, createLocalRepoCmd(path)
+		case kindGHPrivate:
+			return m, createGitHubRepoCmd(name, path, true)
+		case kindGHPublic:
+			return m, createGitHubRepoCmd(name, path, false)
+		}
+		return m, nil
+	}
+
 	var cmd tea.Cmd
 	m.createRepoNameInput, cmd = m.createRepoNameInput.Update(msg)
 	return m, cmd

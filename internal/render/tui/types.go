@@ -68,8 +68,39 @@ type Model struct {
 	reposFilter         textinput.Model
 	createRepoNameInput textinput.Model
 	createRepoFolderPath string
+	createStep           createStep
+	createKind           createKind
 
 	focusStack []FocusState
+}
+
+// createStep tracks which step of the two-step "new repo" popup is active.
+type createStep int
+
+const (
+	stepChooseKind createStep = iota // pick local / GitHub private / GitHub public
+	stepEnterName                    // type the repo name and confirm
+)
+
+// createKind is the repo type chosen in the first step of the popup.
+type createKind int
+
+const (
+	kindLocal createKind = iota
+	kindGHPrivate
+	kindGHPublic
+)
+
+func (k createKind) Label() string {
+	switch k {
+	case kindLocal:
+		return "Local uniquement"
+	case kindGHPrivate:
+		return "GitHub — privé"
+	case kindGHPublic:
+		return "GitHub — public"
+	}
+	return ""
 }
 
 type createRepoResultMsg struct {

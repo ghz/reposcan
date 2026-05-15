@@ -102,7 +102,10 @@ func (m *Model) keybindings() []common.Keybinding {
 	case FocusHelpPopup:
 		return helpPopupKeybindings
 	case FocusCreateRepoPopup:
-		return createRepoPopupKeybindings
+		if m.createStep == stepEnterName {
+			return createRepoNameKeybindings
+		}
+		return createRepoKindKeybindings
 	}
 	return []common.Keybinding{}
 }

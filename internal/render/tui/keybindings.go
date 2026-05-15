@@ -99,19 +99,19 @@ var helpPopupKeybindings = []common.Keybinding{
 	},
 }
 
-var createRepoPopupKeybindings = []common.Keybinding{
+var createRepoKindKeybindings = []common.Keybinding{
 	{
-		Key:         "l",
+		Key:         "1",
 		Description: "Local uniquement",
 		ShortDesc:   "Local",
 	},
 	{
-		Key:         "p",
+		Key:         "2",
 		Description: "GitHub — privé",
 		ShortDesc:   "GH privé",
 	},
 	{
-		Key:         "u",
+		Key:         "3",
 		Description: "GitHub — public",
 		ShortDesc:   "GH public",
 	},
@@ -119,5 +119,18 @@ var createRepoPopupKeybindings = []common.Keybinding{
 		Key:         "esc",
 		Description: "Annuler",
 		ShortDesc:   "Annuler",
+	},
+}
+
+var createRepoNameKeybindings = []common.Keybinding{
+	{
+		Key:         "enter",
+		Description: "Créer le repo",
+		ShortDesc:   "Créer",
+	},
+	{
+		Key:         "esc",
+		Description: "Retour au choix du type",
+		ShortDesc:   "Retour",
 	},
 }
