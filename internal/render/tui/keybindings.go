@@ -52,8 +52,8 @@ var reposTableKeybindings = []common.Keybinding{
 	},
 	{
 		Key:         "/",
-		Description: "Filter by repo/branch name",
-		ShortDesc:   "Filter",
+		Description: "Search by repo/branch name",
+		ShortDesc:   "Search",
 	},
 	{
 		Key:         "q",
@@ -71,7 +71,7 @@ var reposTableFilterKeybindings = []common.Keybinding{
 	},
 	{
 		Key:         "<esc>",
-		Description: "Hide and cancel filter",
+		Description: "Hide and cancel search",
 		ShortDesc:   "Cancel",
 	},
 }

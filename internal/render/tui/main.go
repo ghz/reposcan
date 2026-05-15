@@ -94,7 +94,7 @@ func Render(
 
 func createRrepoFilter() textinput.Model {
 	ti := textinput.New()
-	ti.Placeholder = "Filter by repo/branch name"
+	ti.Placeholder = "Search by repo/branch name"
 	ti.CharLimit = 156
 	ti.Width = 100
 	return ti
