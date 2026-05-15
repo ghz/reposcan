@@ -1,10 +1,12 @@
 package config
 
+import "path/filepath"
+
 // Default configuration locations under the user's home directory.
 const (
-	DefaultConfigDir  = "/.config/reposcan/"
+	DefaultConfigDir  = ".config/reposcan"
 	DefaultConfigToml = "config.toml"
-	DefaultLogFileDir = "/.config/reposcan/logs/"
+	DefaultLogFileDir = ".config/reposcan/logs"
 )
 
 // Paths contains resolved file-system locations for configuration.
@@ -19,7 +21,7 @@ type Paths struct {
 func DefaultPaths() Paths {
 	return Paths{
 		ConfigDir:      DefaultConfigDir,
-		ConfigFilePath: DefaultConfigDir + DefaultConfigToml,
+		ConfigFilePath: filepath.Join(DefaultConfigDir, DefaultConfigToml),
 		LogFileDir:     DefaultLogFileDir,
 	}
 }

@@ -12,6 +12,7 @@ case "$OS" in
   *)
     echo "error: unsupported operating system: $OS" >&2
     echo "       supported: linux, darwin" >&2
+    echo "       on Windows, run: irm https://raw.githubusercontent.com/mabd-dev/reposcan/main/install.ps1 | iex" >&2
     exit 1
     ;;
 esac

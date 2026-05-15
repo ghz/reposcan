@@ -66,6 +66,9 @@ jobs:
           - os: darwin
             arch: arm64
             runner: macos-latest
+          - os: windows
+            arch: amd64
+            runner: windows-latest
 
     runs-on: ${{ matrix.runner }}
 
@@ -91,9 +94,12 @@ jobs:
         env:
           GOOS: ${{ matrix.os }}
           GOARCH: ${{ matrix.arch }}
-          CGO_ENABLED: 1
+          CGO_ENABLED: ${{ matrix.os == 'windows' && '0' || '1' }}
+        shell: bash
         run: |
-          ASSET_NAME="reposcan-${{ github.ref_name }}-${{ matrix.os }}-${{ matrix.arch }}"
+          EXT=""
+          if [ "${{ matrix.os }}" = "windows" ]; then EXT=".exe"; fi
+          ASSET_NAME="reposcan-${{ github.ref_name }}-${{ matrix.os }}-${{ matrix.arch }}${EXT}"
           echo "Building $ASSET_NAME ..."
           go build \
             -ldflags "-X github.com/mabd-dev/reposcan/cmd/reposcan.mixpanelToken=${{ secrets.MIXPANEL_TOKEN }}" \
@@ -101,11 +107,15 @@ jobs:
             .
 
       - name: Verify Binary
-        run: ./reposcan-${{ github.ref_name }}-${{ matrix.os }}-${{ matrix.arch }} version
+        shell: bash
+        run: |
+          EXT=""
+          if [ "${{ matrix.os }}" = "windows" ]; then EXT=".exe"; fi
+          ./reposcan-${{ github.ref_name }}-${{ matrix.os }}-${{ matrix.arch }}${EXT} version
 
       - name: Upload Binary to Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
           token: ${{ secrets.GITHUB_TOKEN }}
-          files: reposcan-${{ github.ref_name }}-${{ matrix.os }}-${{ matrix.arch }}
+          files: reposcan-${{ github.ref_name }}-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.os == 'windows' && '.exe' || '' }}

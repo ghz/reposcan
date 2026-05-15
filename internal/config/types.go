@@ -86,6 +86,11 @@ func Defaults() Config {
 		"/System/**",
 		"/Library/**",
 		"~/Library/**",
+
+		// --- Windows system dirs ---
+		"C:/Windows/**",
+		"C:/Program Files/**",
+		"C:/Program Files (x86)/**",
 	}
 
 	newOutput := Output{

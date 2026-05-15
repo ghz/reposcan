@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"runtime"
 	"strings"
 )
 
@@ -18,6 +19,8 @@ func deleteRepo(repoIds []string, index int) []string {
 }
 
 func shellEscapePath(path string) string {
-	// Wrap in single quotes, escape existing single quotes
+	if runtime.GOOS == "windows" {
+		return path
+	}
 	return "'" + strings.ReplaceAll(path, "'", `'\''`) + "'"
 }

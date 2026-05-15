@@ -23,7 +23,16 @@ func RenderReposTable(r report.ScanReport) {
 }
 
 func renderRepoState(rs report.RepoState) {
-	repoCell := fmt.Sprintf("%-*s", RepoW, truncateRunes(rs.Repo, RepoW))
+	repoName := fmt.Sprintf("%-*s", RepoW, truncateRunes(rs.Repo, RepoW))
+	var repoCell string
+	switch {
+	case len(rs.UncommitedFiles) > 0:
+		repoCell = RedS("%s", repoName)
+	case rs.HaveUnpushedCommits() || rs.HaveUnpulledCommits():
+		repoCell = YellowS("%s", repoName)
+	default:
+		repoCell = GreenS("%s", repoName)
+	}
 	branchCell := BlueS("%-*s", BranchW, truncateRunes(rs.Branch, BranchW))
 
 	remoteStateStr := getStateColumnStr(rs)

@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/bubbles/table"
+	"github.com/charmbracelet/lipgloss"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/mabd-dev/reposcan/internal/theme"
 	"github.com/mabd-dev/reposcan/pkg/report"
@@ -42,40 +43,47 @@ func createRows(repoStates []report.RepoState, theme theme.Theme) []table.Row {
 	return rows
 }
 
-func getStateColumnStr(rs report.RepoState, theme theme.Theme) string {
-	parts := []string{}
-
+func getStateColumnStr(rs report.RepoState, t theme.Theme) string {
 	uc := len(rs.UncommitedFiles)
-	ucStr := fmt.Sprintf("⏳%-d ", uc)
 
+	ucColor := t.Colors.Muted
+	if uc > 0 {
+		ucColor = t.Colors.Error
+	}
+	ucStr := lipgloss.NewStyle().Foreground(ucColor).Render(fmt.Sprintf("⏳%-d", uc)) + " "
+
+	parts := []string{}
 	for _, remoteStatus := range rs.RemoteStatus {
 		var statusParts []string
 
-		if remoteStatus.Ahead > 0 {
-			statusParts = append(statusParts, fmt.Sprintf("↑%-d", remoteStatus.Ahead))
-		} else if remoteStatus.Ahead < 0 {
-			statusParts = append(statusParts, "x")
+		if remoteStatus.Ahead < 0 {
+			statusParts = append(statusParts, lipgloss.NewStyle().Foreground(t.Colors.Error).Render("x"))
 		} else {
-			statusParts = append(statusParts, fmt.Sprintf("↑%-d", 0))
+			aheadColor := t.Colors.Muted
+			if remoteStatus.Ahead > 0 {
+				aheadColor = t.Colors.Warning
+			}
+			statusParts = append(statusParts, lipgloss.NewStyle().Foreground(aheadColor).Render(fmt.Sprintf("↑%-d", remoteStatus.Ahead)))
 		}
 
-		if remoteStatus.Behind > 0 {
-			statusParts = append(statusParts, fmt.Sprintf("↓%-d", remoteStatus.Behind))
-		} else if remoteStatus.Behind < 0 {
-			statusParts = append(statusParts, "x")
+		if remoteStatus.Behind < 0 {
+			statusParts = append(statusParts, lipgloss.NewStyle().Foreground(t.Colors.Error).Render("x"))
 		} else {
-			statusParts = append(statusParts, fmt.Sprintf("↓%-d", 0))
+			behindColor := t.Colors.Muted
+			if remoteStatus.Behind > 0 {
+				behindColor = t.Colors.Warning
+			}
+			statusParts = append(statusParts, lipgloss.NewStyle().Foreground(behindColor).Render(fmt.Sprintf("↓%-d", remoteStatus.Behind)))
 		}
 
 		if remoteStatus.Remote != "" && !(len(rs.RemoteStatus) == 1 && remoteStatus.Remote == "origin") {
-			remoteName := theme.Styles.Base.Render(fmt.Sprintf("(%s)", remoteStatus.Remote))
+			remoteName := t.Styles.Base.Render(fmt.Sprintf("(%s)", remoteStatus.Remote))
 			statusParts = append(statusParts, remoteName)
 		}
 
 		parts = append(parts, strings.Join(statusParts, " "))
 	}
 
-	// Combine uncommitted count with all remote statuses, separated by " | "
 	s := ucStr
 	s += strings.Join(parts, " | ")
 
