@@ -79,12 +79,10 @@ func (m Model) updateReposTable(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m, openRemoteForRepo(rs.Path)
 		case "right", "l":
-			m.viewMode = m.viewMode.Next()
-			m.applyViewMode()
+			m.repoDetails.CycleSubMode(m.reposTable.GetCurrentRepoState(), true)
 			return m, nil
 		case "left", "h":
-			m.viewMode = m.viewMode.Prev()
-			m.applyViewMode()
+			m.repoDetails.CycleSubMode(m.reposTable.GetCurrentRepoState(), false)
 			return m, nil
 		case "o":
 			path := m.reposTable.GetCurrentPath()
@@ -131,10 +129,12 @@ func (m Model) updateReposTable(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.pushFocus(FocusDeleteRepoPopup)
 			return m, nil
 		case "tab":
-			m.repoDetails.CycleSubMode(m.reposTable.GetCurrentRepoState(), true)
+			m.viewMode = m.viewMode.Next()
+			m.applyViewMode()
 			return m, nil
 		case "shift+tab":
-			m.repoDetails.CycleSubMode(m.reposTable.GetCurrentRepoState(), false)
+			m.viewMode = m.viewMode.Prev()
+			m.applyViewMode()
 			return m, nil
 		case "+", "=":
 			m.reposTable.ExpandCurrent()

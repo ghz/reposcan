@@ -6,13 +6,18 @@ import (
 
 var reposTableKeybindings = []common.Keybinding{
 	{
+		Key:         "tab/⇧tab",
+		Description: "Switch view: dirty / all repos / all dirs / non-repo dirs (⇧tab goes back)",
+		ShortDesc:   "Switch View",
+	},
+	{
 		Key:         "↑/↓",
 		Description: "Navigate up and down (or j/k)",
 		ShortDesc:   "Navigate",
 	},
 	{
-		Key:         "tab/⇧tab",
-		Description: "Cycle details: file changes / recent commits / README (⇧tab goes back)",
+		Key:         "←/→",
+		Description: "Cycle details: file changes / recent commits / README (or h/l)",
 		ShortDesc:   "Switch Details",
 	},
 	{

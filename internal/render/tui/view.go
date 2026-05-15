@@ -191,20 +191,7 @@ func (m *Model) tabBarView() string {
 	}
 
 	tabsBlock := lipgloss.JoinHorizontal(lipgloss.Top, tabs...)
-	hint := m.theme.Styles.Muted.Render("← → switch view ")
-
-	gap := m.width - lipgloss.Width(tabsBlock) - lipgloss.Width(hint)
-	if gap < 1 {
-		gap = 1
-	}
-
-	bar := lipgloss.JoinHorizontal(
-		lipgloss.Top,
-		tabsBlock,
-		strings.Repeat(" ", gap),
-		hint,
-	)
-	return lipgloss.NewStyle().Width(m.width).MaxWidth(m.width).Render(bar)
+	return lipgloss.NewStyle().Width(m.width).MaxWidth(m.width).Render(tabsBlock)
 }
 
 // renderAlerts take list of alerts, calculate each alert y position and render it (it it's visible). Overlay each alert on top of main [view] (bg view)
