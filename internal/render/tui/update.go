@@ -91,7 +91,7 @@ func (m Model) updateReposTable(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.createStep = stepChooseKind
 			m.pushFocus(FocusCreateRepoPopup)
 			return m, nil
-		case "d":
+		case "tab":
 			m.repoDetails.ToggleSubMode(m.reposTable.GetCurrentRepoState())
 			return m, nil
 		case "c":

@@ -140,7 +140,7 @@ func (m *Model) stableFooterHeight(actualFooter string) int {
 }
 
 // tabBarView renders a horizontal bar with every ViewMode, highlighting the
-// active one. It mirrors what the "tab" key cycles through.
+// active one.
 func (m *Model) tabBarView() string {
 	modes := []ViewMode{
 		ViewModeDirty,

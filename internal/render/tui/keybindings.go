@@ -11,6 +11,11 @@ var reposTableKeybindings = []common.Keybinding{
 		ShortDesc:   "Navigate",
 	},
 	{
+		Key:         "tab",
+		Description: "Toggle details: file changes / recent commits",
+		ShortDesc:   "Details",
+	},
+	{
 		Key:         "S",
 		Description: "Quick save: git add . + commit wip + push",
 		ShortDesc:   "Quick save",
@@ -29,11 +34,6 @@ var reposTableKeybindings = []common.Keybinding{
 		Key:         "F",
 		Description: "Git fetch",
 		ShortDesc:   "Fetch",
-	},
-	{
-		Key:         "d",
-		Description: "Toggle details: file changes / recent commits",
-		ShortDesc:   "Details",
 	},
 	{
 		Key:         "o",

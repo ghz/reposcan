@@ -115,7 +115,7 @@ reposcan
 |---|---|
 | `↑` / `↓` or `j` / `k` | Navigate |
 | `←` / `→` or `h` / `l` | Switch view mode |
-| `d` | Toggle details panel: **file changes** ↔ **recent commits** |
+| `Tab` | Toggle details panel: **file changes** ↔ **recent commits** |
 | `n` | Create a new repo from selected folder (local or GitHub) |
 | `o` | Open selected repo/folder in editor (VS Code by default) |
 | `g` | Open remote URL in browser |
