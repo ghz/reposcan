@@ -6,6 +6,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/mabd-dev/reposcan/internal/logger"
 	"github.com/mabd-dev/reposcan/internal/render/tui/alerts"
+	"github.com/mabd-dev/reposcan/internal/render/tui/repodetails"
 	"golang.design/x/clipboard"
 )
 
@@ -33,6 +34,13 @@ func (m Model) updateReposTable(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// 	return m, gitPush(m)
 		// case "f":
 		// 	return m, gitFetch(m)
+		case "tab":
+			m.viewMode = m.viewMode.Next()
+			m.applyViewMode()
+			return m, nil
+		case "d":
+			m.repoDetails.ToggleSubMode(m.reposTable.GetCurrentRepoState())
+			return m, nil
 		case "c":
 			rs := m.reposTable.GetCurrentRepoState()
 			if rs == nil {
@@ -71,7 +79,11 @@ func (m Model) updateReposTable(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return nm, cmd
 	}
 
+	prevCursor := m.reposTable.Cursor()
 	m.reposTable, cmd = m.reposTable.Update(msg)
+	if m.reposTable.Cursor() != prevCursor && m.repoDetails.SubMode() == repodetails.DetailsSubModeCommits {
+		m.repoDetails.RefetchCommits(m.reposTable.GetCurrentRepoState())
+	}
 	return m, cmd
 }
 
@@ -170,7 +182,8 @@ func defaultUpdate(m Model, msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 	case generateReportResponse:
 		m.loading = false
-		m.reposTable.SetReport(msg.report)
+		m.fullReport = msg.report
+		m.applyViewMode()
 		return m, nil
 
 	case alerts.AddAlertMsg, alerts.TickMsg:

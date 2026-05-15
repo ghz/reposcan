@@ -3,6 +3,7 @@ package gitx
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"net/url"
 	"os/exec"
 	"path"
@@ -191,6 +192,17 @@ func parseRepoName(remote string) (string, bool) {
 	}
 
 	return "", false
+}
+
+// GetRecentCommits returns the last n commits for the repository at repoPath,
+// one formatted "hash message" string per commit (most recent first).
+func GetRecentCommits(repoPath string, limit int) ([]string, error) {
+	output, err := RunGitCommand(repoPath, "log", fmt.Sprintf("-n%d", limit), "--oneline")
+	if err != nil {
+		return nil, err
+	}
+	lines := strings.Split(strings.TrimRight(output, "\n"), "\n")
+	return removeEmptyStrings(lines), nil
 }
 
 // RunGitCommand executes a git command in dir and returns its stdout as a string.

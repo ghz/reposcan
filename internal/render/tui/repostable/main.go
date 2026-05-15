@@ -23,6 +23,7 @@ func New(
 		report:        report,
 		filteredRepos: report.RepoStates,
 		filterQuery:   "",
+		displayMode:   tableDisplayRepos,
 	}
 
 	cols := createColumns(width)
@@ -38,7 +39,6 @@ func New(
 	km := table.DefaultKeyMap()
 	setKeymaps(km)
 
-	// if no repos, show an empty placeholder row so the table renders nicely
 	if len(rows) == 0 {
 		t.SetRows([]table.Row{{"", "", ""}})
 	}
@@ -57,12 +57,36 @@ func (rt Model) Init() tea.Cmd { return nil }
 
 func (m *Model) SetReport(report report.ScanReport) {
 	m.report = report
+	m.displayMode = tableDisplayRepos
 	m.Filter(m.filterQuery)
 }
 
+func (m *Model) SetTitle(title string) {
+	m.title = title
+}
+
+// SetFolders switches the table to folder-display mode, showing all direct
+// subdirectories with a visual indicator of whether each is a Git repo.
+func (m *Model) SetFolders(folders []report.FolderEntry, repoStates []report.RepoState) {
+	m.folders = folders
+	m.displayMode = tableDisplayFolders
+
+	m.repoStatesByPath = make(map[string]report.RepoState, len(repoStates))
+	for _, rs := range repoStates {
+		m.repoStatesByPath[rs.Path] = rs
+	}
+
+	rows := createFolderRows(folders, m.repoStatesByPath, m.theme)
+	if len(rows) == 0 {
+		rows = []table.Row{{"", "", ""}}
+	}
+	m.tbl.SetRows(rows)
+	m.tbl.SetCursor(0)
+}
+
 func (m *Model) UpdateWindowSize(width int, height int) Model {
-	m.width = width - 2   // border corners
-	m.height = height - 2 // border corners
+	m.width = width - 2
+	m.height = height - 2
 
 	m.tbl.SetHeight(m.height)
 	cols := createColumns(m.width)
@@ -97,7 +121,6 @@ func (m *Model) Filter(query string) {
 	} else {
 		m.tbl.SetCursor(0)
 	}
-
 }
 
 func (m *Model) UpdateRepoState(index int, newState report.RepoState) {
@@ -112,35 +135,65 @@ func (m *Model) UpdateRepoState(index int, newState report.RepoState) {
 	m.tbl.SetRows(rows)
 }
 
-// Blur removes focus from table
 func (m *Model) Blur() {
 	m.tbl.Blur()
 }
 
-// Focus bring focus to table
 func (m *Model) Focus() {
 	m.tbl.Focus()
 }
 
-// Cursor returns the index of the selected row.
 func (m *Model) Cursor() int {
 	return m.tbl.Cursor()
 }
 
 func (rt *Model) ReposCount() int {
+	if rt.displayMode == tableDisplayFolders {
+		return len(rt.folders)
+	}
 	return len(rt.filteredRepos)
 }
 
 func (m *Model) GetCurrentRepoState() *report.RepoState {
+	if m.displayMode == tableDisplayFolders {
+		return m.GetCurrentFolderRepoState()
+	}
 	return m.GetRepoStateAt(m.Cursor())
 }
 
 func (m *Model) GetRepoStateAt(index int) *report.RepoState {
-	if index < 0 {
-		return nil
-	}
-	if index >= len(m.filteredRepos) {
+	if index < 0 || index >= len(m.filteredRepos) {
 		return nil
 	}
 	return &m.filteredRepos[index]
+}
+
+// GetCurrentFolderEntry returns the FolderEntry at the current cursor in folders mode.
+func (m *Model) GetCurrentFolderEntry() *report.FolderEntry {
+	if m.displayMode != tableDisplayFolders {
+		return nil
+	}
+	i := m.tbl.Cursor()
+	if i < 0 || i >= len(m.folders) {
+		return nil
+	}
+	return &m.folders[i]
+}
+
+// GetCurrentFolderRepoState returns the RepoState for the currently selected
+// folder, or nil if the folder is not a git repository.
+func (m *Model) GetCurrentFolderRepoState() *report.RepoState {
+	entry := m.GetCurrentFolderEntry()
+	if entry == nil || !entry.IsRepo {
+		return nil
+	}
+	rs, ok := m.repoStatesByPath[entry.Path]
+	if !ok {
+		return nil
+	}
+	return &rs
+}
+
+func (m *Model) DisplayMode() tableDisplayMode {
+	return m.displayMode
 }

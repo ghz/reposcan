@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/mabd-dev/reposcan/pkg/report"
 )
 
 // FindGitRepos walks each root and returns directories that look like Git worktrees.
@@ -69,6 +71,43 @@ func isGitRepo(path string) bool {
 		}
 	}
 	return false
+}
+
+// FindDirectSubdirs returns all immediate subdirectories of each root that are
+// not ignored, marking whether each is a Git repository.
+func FindDirectSubdirs(roots []string, dirignore []string) ([]report.FolderEntry, []string) {
+	matcher := NewIgnoreMatcher(roots, dirignore)
+	var entries []report.FolderEntry
+	var warnings []string
+	seen := map[string]struct{}{}
+
+	for _, root := range roots {
+		root = os.ExpandEnv(root)
+		dirEntries, err := os.ReadDir(root)
+		if err != nil {
+			warnings = append(warnings, err.Error())
+			continue
+		}
+		for _, de := range dirEntries {
+			if !de.IsDir() {
+				continue
+			}
+			p := filepath.Join(root, de.Name())
+			if matcher.ShouldIgnore(p) {
+				continue
+			}
+			if _, visited := seen[p]; visited {
+				continue
+			}
+			seen[p] = struct{}{}
+			entries = append(entries, report.FolderEntry{
+				Path:   p,
+				Name:   de.Name(),
+				IsRepo: isGitRepo(p),
+			})
+		}
+	}
+	return entries, warnings
 }
 
 func removeDuplicates(strs []string) []string {

@@ -99,6 +99,30 @@ func setKeymaps(km table.KeyMap) {
 	km.GotoBottom.SetKeys("end", "G")
 }
 
+func createFolderRows(folders []report.FolderEntry, reposByPath map[string]report.RepoState, t theme.Theme) []table.Row {
+	rows := make([]table.Row, 0, len(folders))
+	for _, f := range folders {
+		typeLabel := t.Styles.Muted.Render("dir")
+		branch := t.Styles.Muted.Render("—")
+		state := t.Styles.Muted.Render("—")
+
+		if f.IsRepo {
+			typeLabel = t.Styles.Base.Foreground(t.Colors.Info).Render("repo")
+			if rs, ok := reposByPath[f.Path]; ok {
+				branch = rs.Branch
+				state = getStateColumnStr(rs, t)
+			}
+		}
+
+		rows = append(rows, table.Row{
+			f.Name + "  " + typeLabel,
+			branch,
+			state,
+		})
+	}
+	return rows
+}
+
 func getRepoIndex(repos []report.RepoState, id string) int {
 	for i, s := range repos {
 		if s.ID == id {

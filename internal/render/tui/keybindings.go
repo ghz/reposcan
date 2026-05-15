@@ -11,6 +11,16 @@ var reposTableKeybindings = []common.Keybinding{
 		ShortDesc:   "Navigate",
 	},
 	{
+		Key:         "tab",
+		Description: "Cycle view: non-sync → all repos → all dirs",
+		ShortDesc:   "View",
+	},
+	{
+		Key:         "d",
+		Description: "Toggle details: file changes / recent commits",
+		ShortDesc:   "Details",
+	},
+	{
 		Key:         "c",
 		Description: "Copy repo path to clipboard",
 		ShortDesc:   "Copy Path",

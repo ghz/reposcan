@@ -37,11 +37,15 @@ func (m Model) addIndicator(body string) string {
 }
 
 func (m Model) addSectionTitle(body string) string {
+	title := m.title
+	if title == "" {
+		title = "repos"
+	}
 	return overlay.PlaceOverlayWithPositionAndPadding(
 		overlay.OverlayPositionTopLeft,
 		lipgloss.Width(body), lipgloss.Height(body),
 		2, 0,
-		"repos", body,
+		title, body,
 		false,
 		overlay.WithWhitespaceChars(" "),
 	)

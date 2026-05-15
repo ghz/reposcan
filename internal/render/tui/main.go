@@ -6,6 +6,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/mabd-dev/reposcan/internal"
 	"github.com/mabd-dev/reposcan/internal/config"
 	"github.com/mabd-dev/reposcan/internal/logger"
 	"github.com/mabd-dev/reposcan/internal/render/tui/alerts"
@@ -32,7 +33,7 @@ func (m Model) Init() tea.Cmd { return nil }
 
 // Render runs a Bubble Tea UI that renders the ScanReport in a table.
 func Render(
-	r report.ScanReport,
+	_ report.ScanReport,
 	configs config.Config,
 ) error {
 	colorSchemeName := configs.Output.ColorSchemeName
@@ -46,9 +47,13 @@ func Render(
 		Styles: theme.CreateStyles(colors),
 	}
 
+	// Always fetch all repos so the TUI can manage its own view-mode filtering.
+	fullReport := internal.GenerateFullScanReport(configs)
+	dirtyReport := filterDirtyRepos(fullReport)
+
 	reposTable := repostable.New(
 		theme,
-		r,
+		dirtyReport,
 		totalWidth*sizeReposTableWidthPercent/100,
 		totalHeight*sizeReposTableHeightPercent/100,
 	)
@@ -56,17 +61,14 @@ func Render(
 	reposTableHeader := rth.Header{
 		Theme: theme,
 	}
-	reposTableHeader.SetReport(r)
+	reposTableHeader.SetReport(dirtyReport)
 
-	var repoDetails repodetails.Model
-	if len(r.RepoStates) == 0 {
-		repoDetails = repodetails.New(nil, theme)
-	} else {
-		repoDetails = repodetails.New(&r.RepoStates[0], theme)
-	}
+	repoDetails := repodetails.New(nil, theme)
 
 	m := Model{
 		configs:     configs,
+		fullReport:  fullReport,
+		viewMode:    ViewModeDirty,
 		reposTable:  reposTable,
 		repoDetails: repoDetails,
 		rtHeader:    reposTableHeader,

@@ -15,6 +15,34 @@ import (
 	"github.com/mabd-dev/reposcan/pkg/report"
 )
 
+// ViewMode controls which set of items is shown in the repos table.
+type ViewMode int
+
+const (
+	ViewModeDirty       ViewMode = 0 // repos non-sync (default)
+	ViewModeAllRepos    ViewMode = 1 // tous les repos git
+	ViewModeAllDirs     ViewMode = 2 // tous les dossiers directs (repos + non-repos)
+	ViewModeNonRepoDirs ViewMode = 3 // dossiers directs sans repo git
+)
+
+func (v ViewMode) Label() string {
+	switch v {
+	case ViewModeDirty:
+		return "non-sync repos"
+	case ViewModeAllRepos:
+		return "all repos"
+	case ViewModeAllDirs:
+		return "all dirs"
+	case ViewModeNonRepoDirs:
+		return "non-repo dirs"
+	}
+	return ""
+}
+
+func (v ViewMode) Next() ViewMode {
+	return (v + 1) % 4
+}
+
 type Model struct {
 	// Loading stuff
 	loading bool
@@ -25,6 +53,8 @@ type Model struct {
 	// configs
 	configs           config.Config
 	reposBeingUpdated []string
+	viewMode          ViewMode
+	fullReport        report.ScanReport
 
 	// Models
 	reposTable  repostable.Model
@@ -46,8 +76,8 @@ type generateReport struct {
 
 func (g *generateReport) Cmd() tea.Cmd {
 	return func() tea.Msg {
-		report := internal.GenerateScanReport(g.configs)
-		return generateReportResponse{report: report}
+		r := internal.GenerateFullScanReport(g.configs)
+		return generateReportResponse{report: r}
 	}
 }
 
