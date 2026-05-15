@@ -134,6 +134,9 @@ func (m *Model) Filter(query string) {
 	cursorPosition := m.tbl.Cursor()
 
 	rows := createRows(m.filteredRepos, m.favorites, m.theme)
+	if len(rows) == 0 {
+		rows = []table.Row{{"", "", ""}}
+	}
 	m.tbl.SetRows(rows)
 
 	if cursorPosition < len(m.filteredRepos) {
@@ -165,6 +168,19 @@ func (m *Model) Focus() {
 
 func (m *Model) Cursor() int {
 	return m.tbl.Cursor()
+}
+
+func (m *Model) SetCursorByRepoID(id string) bool {
+	if id == "" || m.displayMode != tableDisplayRepos {
+		return false
+	}
+	for i, rs := range m.filteredRepos {
+		if rs.ID == id {
+			m.tbl.SetCursor(i)
+			return true
+		}
+	}
+	return false
 }
 
 func (rt *Model) ReposCount() int {

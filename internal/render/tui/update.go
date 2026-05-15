@@ -1,7 +1,6 @@
 package tui
 
 import (
-	"os/exec"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -55,8 +54,17 @@ func (m Model) updateReposTable(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if editor == "" {
 					editor = "code"
 				}
-				cmd := exec.Command(editor, path)
+				cmd := commandForOpenPath(editor, path)
 				_ = cmd.Start()
+			}
+			return m, nil
+		case "e":
+			path := m.reposTable.GetCurrentPath()
+			if path == "" {
+				return m, nil
+			}
+			if err := openFileManager(path); err != nil {
+				return m, makeAlert(alerts.MsgTypeError, "open failed: "+err.Error())
 			}
 			return m, nil
 		case "f":
@@ -156,6 +164,7 @@ func (m Model) updateGitMenuPopup(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	return m, nil
 }
+
 func (m Model) updateReposFilter(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -165,10 +174,7 @@ func (m Model) updateReposFilter(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			return m, nil
 		case "enter":
-			emptyQuery := len(strings.TrimSpace(m.reposFilter.Value())) == 0
-
-			m.popFocus(emptyQuery)
-
+			m.acceptReposFilter()
 			return m, nil
 		}
 	}
@@ -180,6 +186,18 @@ func (m Model) updateReposFilter(msg tea.Msg) (tea.Model, tea.Cmd) {
 	m.reposTable.Filter(m.reposFilter.Value())
 
 	return m, cmd
+}
+
+func (m *Model) acceptReposFilter() {
+	selectedRepoID := ""
+	if rs := m.reposTable.GetCurrentRepoState(); rs != nil {
+		selectedRepoID = rs.ID
+	}
+
+	m.reposFilter.SetValue("")
+	m.reposTable.Filter("")
+	m.reposTable.SetCursorByRepoID(selectedRepoID)
+	m.popFocus(false)
 }
 
 func (m Model) keybindingPopup(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -272,13 +290,17 @@ func quickSaveCmd(path string) tea.Cmd {
 
 func createLocalRepoCmd(path string) tea.Cmd {
 	return func() tea.Msg {
-		if err := gitx.InitRepo(path); err != nil {
-			return createRepoResultMsg{label: "local", err: err}
-		}
-		if err := gitx.AddAll(path); err != nil {
-			return createRepoResultMsg{label: "local", err: err}
-		}
-		if err := gitx.CommitInitial(path); err != nil {
+		err := rollbackCreatedGitDirOnError(path, func() error {
+			if err := gitx.InitRepo(path); err != nil {
+				return err
+			}
+			if err := gitx.AddAll(path); err != nil {
+				return err
+			}
+			_, err := gitx.CommitInitialIfNeeded(path)
+			return err
+		})
+		if err != nil {
 			return createRepoResultMsg{label: "local", err: err}
 		}
 		return createRepoResultMsg{label: "local"}
@@ -291,16 +313,20 @@ func createGitHubRepoCmd(name, path string, private bool) tea.Cmd {
 		label = "GitHub privé"
 	}
 	return func() tea.Msg {
-		if err := gitx.InitRepo(path); err != nil {
-			return createRepoResultMsg{label: label, err: err}
-		}
-		if err := gitx.AddAll(path); err != nil {
-			return createRepoResultMsg{label: label, err: err}
-		}
-		if err := gitx.CommitInitial(path); err != nil {
-			return createRepoResultMsg{label: label, err: err}
-		}
-		if err := gitx.GitHubCreateRepo(name, path, private); err != nil {
+		err := rollbackCreatedGitDirOnError(path, func() error {
+			if err := gitx.InitRepo(path); err != nil {
+				return err
+			}
+			if err := gitx.AddAll(path); err != nil {
+				return err
+			}
+			committed, err := gitx.CommitInitialIfNeeded(path)
+			if err != nil {
+				return err
+			}
+			return gitx.GitHubCreateRepo(name, path, private, committed)
+		})
+		if err != nil {
 			return createRepoResultMsg{label: label, err: err}
 		}
 		return createRepoResultMsg{label: label}

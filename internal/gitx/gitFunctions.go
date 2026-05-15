@@ -217,6 +217,32 @@ func CommitInitial(path string) error {
 	return GitCommit(path, "initial commit")
 }
 
+// CommitInitialIfNeeded creates an initial commit when there are staged changes.
+// It returns false when the repository has nothing to commit.
+func CommitInitialIfNeeded(path string) (bool, error) {
+	stagedFiles, err := RunGitCommand(path, "diff", "--cached", "--name-only")
+	if err != nil {
+		return false, err
+	}
+	if strings.TrimSpace(stagedFiles) == "" {
+		return false, nil
+	}
+
+	if err := CommitInitial(path); err != nil {
+		if isNothingToCommitError(err) {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
+}
+
+func isNothingToCommitError(err error) bool {
+	msg := strings.ToLower(err.Error())
+	return strings.Contains(msg, "nothing to commit") ||
+		strings.Contains(msg, "no changes added to commit")
+}
+
 // QuickSaveResult describes what QuickSave did.
 type QuickSaveResult struct {
 	Committed bool
@@ -249,18 +275,34 @@ func QuickSave(path string) (QuickSaveResult, error) {
 }
 
 // GitHubCreateRepo uses the gh CLI to create a GitHub repo named repoName,
-// linked to the local directory at path, and pushes the initial commit.
+// linked to the local directory at path, and optionally pushes the initial commit.
 // Requires the gh CLI to be installed and authenticated.
-func GitHubCreateRepo(repoName, path string, private bool) error {
+func GitHubCreateRepo(repoName, path string, private bool, push bool) error {
+	if strings.TrimSpace(repoName) == "" {
+		return errors.New("GitHub repository name cannot be empty")
+	}
+	if _, err := exec.LookPath("gh"); err != nil {
+		return errors.New("GitHub CLI (gh) is not installed or not in PATH; install it and run `gh auth login`")
+	}
+
 	visibility := "--public"
 	if private {
 		visibility = "--private"
 	}
-	cmd := exec.Command("gh", "repo", "create", repoName, visibility, "--source="+path, "--push")
-	var stderr bytes.Buffer
+	args := []string{"repo", "create", repoName, visibility, "--source=" + path, "--remote=origin"}
+	if push {
+		args = append(args, "--push")
+	}
+
+	cmd := exec.Command("gh", args...)
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
-		msg := stderr.String()
+		msg := strings.TrimSpace(stderr.String())
+		if msg == "" {
+			msg = strings.TrimSpace(stdout.String())
+		}
 		if msg == "" {
 			msg = err.Error()
 		}
@@ -303,7 +345,7 @@ func GetRecentCommits(repoPath string, limit int) ([]string, error) {
 }
 
 // RunGitCommand executes a git command in dir and returns its stdout as a string.
-// Stderr is discarded, and non-zero exit codes are returned as errors.
+// Non-zero exit codes include git output in the returned error.
 func RunGitCommand(dir string, args ...string) (string, error) {
 	cmd := exec.Command("git", append([]string{"-C", dir}, args...)...)
 
@@ -313,6 +355,13 @@ func RunGitCommand(dir string, args ...string) (string, error) {
 
 	err := cmd.Run()
 	if err != nil {
+		msg := strings.TrimSpace(stderr.String())
+		if msg == "" {
+			msg = strings.TrimSpace(stdout.String())
+		}
+		if msg != "" {
+			return "", fmt.Errorf("%w: %s", err, msg)
+		}
 		return "", err
 	}
 	return stdout.String(), nil

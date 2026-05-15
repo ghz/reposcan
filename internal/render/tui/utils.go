@@ -1,7 +1,10 @@
 package tui
 
 import (
+	"errors"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strings"
 
@@ -54,6 +57,35 @@ func makeAlert(t alerts.AlertType, message string) tea.Cmd {
 	}
 }
 
+func rollbackCreatedGitDirOnError(repoPath string, fn func() error) error {
+	hadGitDir, err := gitDirExists(repoPath)
+	if err != nil {
+		return err
+	}
+
+	err = fn()
+	if err == nil || hadGitDir {
+		return err
+	}
+
+	gitDir := filepath.Join(repoPath, ".git")
+	if cleanupErr := os.RemoveAll(gitDir); cleanupErr != nil {
+		return errors.Join(err, cleanupErr)
+	}
+	return err
+}
+
+func gitDirExists(repoPath string) (bool, error) {
+	_, err := os.Lstat(filepath.Join(repoPath, ".git"))
+	if err == nil {
+		return true, nil
+	}
+	if errors.Is(err, os.ErrNotExist) {
+		return false, nil
+	}
+	return false, err
+}
+
 func openBrowser(url string) {
 	var cmd *exec.Cmd
 	switch runtime.GOOS {
@@ -65,6 +97,26 @@ func openBrowser(url string) {
 		cmd = exec.Command("xdg-open", url)
 	}
 	_ = cmd.Start()
+}
+
+func commandForOpenPath(name string, path string) *exec.Cmd {
+	return exec.Command(name, path)
+}
+
+func openFileManager(path string) error {
+	cmd := commandForFileManager(runtime.GOOS, path)
+	return cmd.Start()
+}
+
+func commandForFileManager(goos string, path string) *exec.Cmd {
+	switch goos {
+	case "windows":
+		return exec.Command("explorer", path)
+	case "darwin":
+		return exec.Command("open", path)
+	default:
+		return exec.Command("xdg-open", path)
+	}
 }
 
 // toggleFavorite adds or removes repoPath from the favorites list, then

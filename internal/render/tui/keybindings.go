@@ -26,6 +26,11 @@ var reposTableKeybindings = []common.Keybinding{
 		ShortDesc:   "Open",
 	},
 	{
+		Key:         "e",
+		Description: "Open in system file manager",
+		ShortDesc:   "Explorer",
+	},
+	{
 		Key:         "f",
 		Description: "Toggle favorite (pinned to top, persisted in config)",
 		ShortDesc:   "Favorite",
@@ -43,7 +48,7 @@ var reposTableKeybindings = []common.Keybinding{
 	{
 		Key:         "r",
 		Description: "Refresh list",
-		ShortDesc:   "Refresh list",
+		ShortDesc:   "Refresh",
 	},
 	{
 		Key:         "/",
