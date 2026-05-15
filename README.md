@@ -1,31 +1,19 @@
 # RepoScan
 
-`reposcan` is a simple command-line tool written in Go that scans your filesystem for Git repositories and reports their status.  
-It helps you quickly find:
-
-- Repositories with **uncommitted files**  
-- Repositories with **unpushed commits** (ahead of upstream)  
-- Repositories with **unpulled changes** (behind upstream)
-
-It outputs results in both **human-friendly tables** and **machine-friendly JSON**, so you can use it interactively or integrate with scripts and future UIs.
-
+`reposcan` is a command-line tool written in Go that scans your filesystem for Git repositories and reports their status.  
+It helps you quickly find repositories with uncommitted files, unpushed commits, or unpulled changes — and act on them directly from an interactive TUI.
 
 🖼 Demo
 
-
-
 https://github.com/user-attachments/assets/1c8370c6-3b94-4490-bc96-fc179ef14f1d
-
-
-
 
 ---
 
 ## ✨ Use cases
 
-- **Daily cleanup**: See which projects have dirty working trees before switching tasks.
-- **Context switch**: Know which repos still have unpushed commits before you leave for the day.
-- **Housekeeping**: Find old repos you forgot to commit/push.
+- **Daily sync check**: See which repos have uncommitted work or unsynced commits before switching machines.
+- **Context switch**: Know what's dirty before you leave for the day.
+- **Housekeeping**: Find folders that aren't git repos yet and initialize them in one keystroke.
 - **Automation**: Export JSON reports to integrate with dashboards or other tools.
 
 ---
@@ -34,17 +22,15 @@ https://github.com/user-attachments/assets/1c8370c6-3b94-4490-bc96-fc179ef14f1d
 
 ### Install script (recommended)
 
-The easiest way to install `reposcan`. Detects your OS and architecture automatically and installs the latest release binary.
-
-**Linux / macOS** — installs into a directory on your `$PATH`:
+**Linux / macOS**
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/mabd-dev/reposcan/main/install.sh | sh
 ```
 
-Supports **linux/amd64**, **darwin/amd64**, and **darwin/arm64**.
+Supports **linux/amd64**, **darwin/amd64**, **darwin/arm64**.
 
-**Windows** — installs into `%LOCALAPPDATA%\reposcan` and adds it to your user `PATH`:
+**Windows**
 
 ```powershell
 irm https://raw.githubusercontent.com/mabd-dev/reposcan/main/install.ps1 | iex
@@ -52,25 +38,18 @@ irm https://raw.githubusercontent.com/mabd-dev/reposcan/main/install.ps1 | iex
 
 Supports **windows/amd64**.
 
-
 #### Migrating from `go install`
 
-If you previously installed reposcan via `go install`, the binary lives in `$GOPATH/bin` (usually `~/go/bin/reposcan`). The curl installer puts the binary in a different location, so both can coexist silently — meaning the old one may take precedence in your `$PATH`.
-
-To avoid this, remove the old binary first:
+If you previously installed reposcan via `go install`, the old binary in `$GOPATH/bin` may take precedence. Remove it first:
 
 ```sh
 rm "$(which reposcan)"
 ```
 
-Then install using the curl installer:
-
-```sh
-curl -fsSL https://raw.githubusercontent.com/mabd-dev/reposcan/main/install.sh | sh
-```
-
+Then reinstall with the script above.
 
 ### From source
+
 ```sh
 git clone https://github.com/mabd-dev/reposcan.git
 cd reposcan
@@ -82,41 +61,99 @@ go build -o reposcan .
 go build -o reposcan.exe .
 ```
 
+---
 
 ## 🚀 Usage
-Scan your home directory
-```sh
-reposcan -r $HOME
-```
 
-Multiple roots
 ```sh
+# Scan your home directory
+reposcan
+
+# Custom root
+reposcan -r ~/Code
+
+# Multiple roots
 reposcan -r ~/Code -r ~/work
 ```
 
-Common flags
-```sh
--d, --dirIgnore stringArray     # (default [$HOME])
--f, --filter string             # Repository filter: all|dirty|uncommitted|unpushed|unpulled (default "dirty")
--h, --help                      # help for reposcan
-    --json-output-path string   # Write scan report JSON files to this directory (optional)
--w, --max-workers int           # Number of concurrent git checks (default 8)
--o, --output string             # Output format: json|interactive|none (default "interactive")
--r, --root stringArray          # Root directory to scan (repeatable). Defaults to $HOME if unset in config. (default [$HOME])
-  , --debug                     # Enable/Disable debug mode
+### Flags
+
+```
+-r, --root stringArray          Root directory to scan (repeatable). Defaults to $HOME.
+-d, --dirIgnore stringArray     Glob patterns to ignore during scan (repeatable)
+-f, --filter string             Repository filter: all|dirty|uncommitted|unpushed|unpulled (default "dirty")
+-o, --output string             Output format: json|interactive|none (default "interactive")
+    --editor string             CLI command used to open repos/folders (e.g. code, zed, idea)
+    --json-output-path string   Write scan report JSON files to this directory (optional)
+-w, --max-workers int           Number of concurrent git checks (default 8)
+    --debug                     Enable debug logging
+-h, --help                      Help
 ```
 
-Help
+---
+
+## 🖥 Interactive TUI
+
+Launch the TUI with the default `interactive` output:
+
 ```sh
-reposcan --help
+reposcan
 ```
 
-More details on flags and config mapping can be found in [docs/cli-flags.md](docs/cli-flags.md).
+### View modes — `Tab` to cycle
+
+| Mode | Description |
+|---|---|
+| **non-sync repos** | Repos with uncommitted files or unsynced commits *(default)* |
+| **all repos** | Every git repository found under your roots |
+| **all dirs** | All direct subdirectories of your roots — repos and plain folders |
+| **non-repo dirs** | Only subdirectories that are **not** git repos |
+
+### Keybindings
+
+| Key | Action |
+|---|---|
+| `↑` / `↓` or `j` / `k` | Navigate |
+| `Tab` | Cycle view mode |
+| `d` | Toggle details panel: **file changes** ↔ **recent commits** |
+| `n` | Create a new repo from selected folder (local or GitHub) |
+| `o` | Open selected repo/folder in editor (VS Code by default) |
+| `g` | Open remote URL in browser |
+| `f` | Toggle favorite — pinned to top, persisted in config |
+| `c` | Copy path to clipboard |
+| `r` | Refresh |
+| `/` | Filter by repo/branch name |
+| `?` | Help popup |
+| `q` / `Esc` | Quit |
+
+### Creating a repo from a folder (`n`)
+
+In `all dirs` or `non-repo dirs` mode, press `n` on any plain folder to open a creation dialog:
+
+```
+┌──────────────────────────────────────────┐
+│              Nouveau repo                │
+│                                          │
+│  Nom: [monprojet                       ] │
+│                                          │
+│  [l]  Local only                         │
+│  [p]  GitHub — private                   │
+│  [u]  GitHub — public                    │
+│                                          │
+│  [esc] Cancel                            │
+└──────────────────────────────────────────┘
+```
+
+- **Local** — `git init` + `git add .` + initial commit
+- **GitHub** — same, then [`gh repo create`](https://cli.github.com/) (requires the `gh` CLI installed and authenticated)
+
+---
 
 ## ⚙️ Configuration
-By default, `reposcan` looks for a config file in:
 
-```sh
+Default location:
+
+```
 # Linux / macOS
 ~/.config/reposcan/config.toml
 
@@ -124,55 +161,73 @@ By default, `reposcan` looks for a config file in:
 %USERPROFILE%\.config\reposcan\config.toml
 ```
 
-Example
+Example:
+
 ```toml
 version = 1
 debug = false
 
-# directories to search for git repos inside
+# Directories to scan
 roots = ["~/Code", "~/work"]
 
+# Only show: dirty | all | uncommitted | unpushed | unpulled
 only = "dirty"
+
+# Editor command for the `o` keybinding
+editor = "code"
+
+# Pinned repos (managed by `f` in the TUI)
+favorites = [
+  "/home/user/Code/myproject",
+]
 
 # Skip these directories (glob patterns)
 dirIgnore = [
-  "/node_modules/",
-  "/.cache/",
-  "/.local/"
+  "**/node_modules/**",
+  "**/.cache/**",
 ]
-
 
 [output]
 type = "interactive"
-jsonPath = "/somewhere/nice"
-
-
+jsonPath = ""
 ```
-> You can still override everything via CLI flags.
 
-check [sample/config.toml](sample/config.toml) for detailed configuration with examples
+> CLI flags override config file values.
 
+See [sample/config.toml](sample/config.toml) for the full reference.
 
 ### Config lookup order
-1. Load default values
-1. Config in `~/.config/reposcan/config.toml` (if exists)
-2. Cli flags (if exists)
-Each step overrides the one before it
 
+1. Built-in defaults
+2. `~/.config/reposcan/config.toml`
+3. CLI flags
+
+Each step overrides the one before it.
+
+---
 
 ## 🛣 Roadmap
-- [x] Scan filesystem for repos
-- [x] Detect uncommitted files, unpushed commits and unpulled commits
-- [x] Stdout Ouput in 3 formats: json, interactive, none
-- [x] Read user customizable `config.toml` file
-- [x] Export Report to json file
-- [x] Support dirignore
-- [x] Worker pool for speed
-- [x] Windows support
-- [x] Support git worktrees
-- [ ] Perform git push/pull/fetch on repos
-- [ ] Show branches with their states on each repo
 
+- [x] Scan filesystem for git repos
+- [x] Detect uncommitted files, unpushed and unpulled commits
+- [x] Output formats: interactive TUI, JSON, none
+- [x] User-configurable `config.toml`
+- [x] Export report to JSON file
+- [x] `dirIgnore` glob patterns
+- [x] Worker pool for concurrent git checks
+- [x] Windows support
+- [x] Git worktree support
+- [x] 4-mode tab view (non-sync / all repos / all dirs / non-repo dirs)
+- [x] Details panel: file changes and recent commits
+- [x] Configurable editor (`o` key)
+- [x] Open remote in browser (`g` key)
+- [x] Favorites pinned to top (`f` key, persisted)
+- [x] Create repo from folder — local or GitHub (`n` key)
+- [ ] Git push / pull / fetch from TUI
+- [ ] Per-branch status view
+
+---
 
 ## 🤝 Contributing
+
 PRs, bug reports, and feature requests are welcome.
