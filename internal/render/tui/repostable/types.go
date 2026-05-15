@@ -27,6 +27,7 @@ type Model struct {
 	report        report.ScanReport
 	filteredRepos []report.RepoState
 	filterQuery   string
+	favorites     map[string]bool // keyed by repo path
 
 	// folders mode
 	folders          []report.FolderEntry

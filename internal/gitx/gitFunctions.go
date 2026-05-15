@@ -194,6 +194,28 @@ func parseRepoName(remote string) (string, bool) {
 	return "", false
 }
 
+// GetRemoteWebURL returns a browser-friendly HTTPS URL for the origin remote
+// of the repository at repoPath. SSH URLs (git@host:org/repo.git) are
+// converted to HTTPS automatically.
+func GetRemoteWebURL(repoPath string) (string, error) {
+	raw, err := RunGitCommand(repoPath, "remote", "get-url", "origin")
+	if err != nil {
+		return "", err
+	}
+	return toWebURL(strings.TrimSpace(raw)), nil
+}
+
+func toWebURL(remote string) string {
+	remote = strings.TrimSuffix(remote, ".git")
+	// SSH format: git@github.com:user/repo
+	if strings.HasPrefix(remote, "git@") {
+		remote = strings.TrimPrefix(remote, "git@")
+		remote = strings.Replace(remote, ":", "/", 1)
+		return "https://" + remote
+	}
+	return remote
+}
+
 // GetRecentCommits returns the last n commits for the repository at repoPath,
 // one formatted "hash message" string per commit (most recent first).
 func GetRecentCommits(repoPath string, limit int) ([]string, error) {

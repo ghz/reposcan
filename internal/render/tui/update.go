@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/mabd-dev/reposcan/internal/gitx"
 	"github.com/mabd-dev/reposcan/internal/logger"
 	"github.com/mabd-dev/reposcan/internal/render/tui/alerts"
 	"github.com/mabd-dev/reposcan/internal/render/tui/repodetails"
@@ -42,9 +43,31 @@ func (m Model) updateReposTable(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "o":
 			path := m.reposTable.GetCurrentPath()
 			if path != "" {
-				cmd := exec.Command("code", path)
+				editor := m.configs.Editor
+				if editor == "" {
+					editor = "code"
+				}
+				cmd := exec.Command(editor, path)
 				_ = cmd.Start()
 			}
+			return m, nil
+		case "g":
+			rs := m.reposTable.GetCurrentRepoState()
+			if rs == nil {
+				return m, nil
+			}
+			url, err := gitx.GetRemoteWebURL(rs.Path)
+			if err != nil || url == "" {
+				return m, nil
+			}
+			openBrowser(url)
+			return m, nil
+		case "f":
+			rs := m.reposTable.GetCurrentRepoState()
+			if rs == nil {
+				return m, nil
+			}
+			m.toggleFavorite(rs.Path)
 			return m, nil
 		case "d":
 			m.repoDetails.ToggleSubMode(m.reposTable.GetCurrentRepoState())

@@ -1,9 +1,11 @@
 package tui
 
 import (
+	"os/exec"
 	"runtime"
 	"strings"
 
+	"github.com/mabd-dev/reposcan/internal/config"
 	"github.com/mabd-dev/reposcan/pkg/report"
 )
 
@@ -43,6 +45,43 @@ func (m *Model) applyViewMode() {
 		nonRepos := filterNonRepoFolders(m.fullReport.AllFolders)
 		m.reposTable.SetFolders(nonRepos, nil)
 	}
+}
+
+func openBrowser(url string) {
+	var cmd *exec.Cmd
+	switch runtime.GOOS {
+	case "windows":
+		cmd = exec.Command("cmd", "/c", "start", url)
+	case "darwin":
+		cmd = exec.Command("open", url)
+	default:
+		cmd = exec.Command("xdg-open", url)
+	}
+	_ = cmd.Start()
+}
+
+// toggleFavorite adds or removes repoPath from the favorites list, then
+// persists the updated config and refreshes the table.
+func (m *Model) toggleFavorite(repoPath string) {
+	favs := m.configs.Favorites
+	found := false
+	for i, p := range favs {
+		if p == repoPath {
+			favs = append(favs[:i], favs[i+1:]...)
+			found = true
+			break
+		}
+	}
+	if !found {
+		favs = append(favs, repoPath)
+	}
+	m.configs.Favorites = favs
+
+	if m.configs.ConfigFilePath != "" {
+		_ = config.WriteToFile(m.configs, m.configs.ConfigFilePath)
+	}
+
+	m.reposTable.SetFavorites(favs)
 }
 
 func filterNonRepoFolders(folders []report.FolderEntry) []report.FolderEntry {

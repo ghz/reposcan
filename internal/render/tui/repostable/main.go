@@ -24,10 +24,11 @@ func New(
 		filteredRepos: report.RepoStates,
 		filterQuery:   "",
 		displayMode:   tableDisplayRepos,
+		favorites:     map[string]bool{},
 	}
 
 	cols := createColumns(width)
-	rows := createRows(model.report.RepoStates, theme)
+	rows := createRows(model.report.RepoStates, map[string]bool{}, theme)
 
 	t := table.New(
 		table.WithColumns(cols),
@@ -63,6 +64,15 @@ func (m *Model) SetReport(report report.ScanReport) {
 
 func (m *Model) SetTitle(title string) {
 	m.title = title
+}
+
+// SetFavorites updates the set of pinned repo paths and refreshes the table.
+func (m *Model) SetFavorites(paths []string) {
+	m.favorites = make(map[string]bool, len(paths))
+	for _, p := range paths {
+		m.favorites[p] = true
+	}
+	m.Filter(m.filterQuery)
 }
 
 // SetFolders switches the table to folder-display mode, showing all direct
@@ -111,9 +121,23 @@ func (m *Model) Filter(query string) {
 		}
 	}
 
+	// Favorites always appear first
+	if len(m.favorites) > 0 {
+		favs := make([]report.RepoState, 0)
+		rest := make([]report.RepoState, 0)
+		for _, rs := range m.filteredRepos {
+			if m.favorites[rs.Path] {
+				favs = append(favs, rs)
+			} else {
+				rest = append(rest, rs)
+			}
+		}
+		m.filteredRepos = append(favs, rest...)
+	}
+
 	cursorPosition := m.tbl.Cursor()
 
-	rows := createRows(m.filteredRepos, m.theme)
+	rows := createRows(m.filteredRepos, m.favorites, m.theme)
 	m.tbl.SetRows(rows)
 
 	if cursorPosition < len(m.filteredRepos) {
@@ -131,7 +155,7 @@ func (m *Model) UpdateRepoState(index int, newState report.RepoState) {
 		m.report.RepoStates[originalIndex] = newState
 	}
 
-	rows := createRows(m.filteredRepos, m.theme)
+	rows := createRows(m.filteredRepos, m.favorites, m.theme)
 	m.tbl.SetRows(rows)
 }
 

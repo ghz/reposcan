@@ -29,13 +29,16 @@ func createColumns(maxWidth int) []table.Column {
 	}
 }
 
-func createRows(repoStates []report.RepoState, theme theme.Theme) []table.Row {
+func createRows(repoStates []report.RepoState, favorites map[string]bool, theme theme.Theme) []table.Row {
 	rows := make([]table.Row, 0, len(repoStates))
 	for _, rs := range repoStates {
 		state := getStateColumnStr(rs, theme)
-
+		name := rs.Repo
+		if favorites[rs.Path] {
+			name = lipgloss.NewStyle().Foreground(theme.Colors.Warning).Render("★") + " " + name
+		}
 		rows = append(rows, table.Row{
-			rs.Repo,
+			name,
 			rs.Branch,
 			state,
 		})

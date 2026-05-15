@@ -11,6 +11,12 @@ type Config struct {
 
 	Output Output `toml:"output"`
 
+	// Editor is the CLI command used to open repos/folders (e.g. "code", "zed", "idea").
+	Editor string `toml:"editor,omitempty"`
+
+	// Favorites is a list of repo paths pinned to the top of the list.
+	Favorites []string `toml:"favorites,omitempty"`
+
 	// Max git checker workers
 	MaxWorkers int `toml:"maxWorkers"`
 
@@ -18,6 +24,10 @@ type Config struct {
 	Debug bool `toml:"debug"`
 
 	Version int `toml:"version"`
+
+	// ConfigFilePath is the absolute path to the loaded config file.
+	// Not serialized — set at runtime.
+	ConfigFilePath string `toml:"-"`
 }
 
 // Defaults returns a Config populated with sensible defaults suitable for
@@ -103,6 +113,7 @@ func Defaults() Config {
 		DirIgnore:  defaultDirIgnore,
 		Only:       OnlyDirty,
 		Output:     newOutput,
+		Editor:     "code",
 		MaxWorkers: 8,
 		Debug:      false,
 		Version:    1,

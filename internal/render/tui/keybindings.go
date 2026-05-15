@@ -22,8 +22,18 @@ var reposTableKeybindings = []common.Keybinding{
 	},
 	{
 		Key:         "o",
-		Description: "Open in VS Code",
+		Description: "Open in editor (VS Code by default, configurable)",
 		ShortDesc:   "Open",
+	},
+	{
+		Key:         "g",
+		Description: "Open remote URL in browser",
+		ShortDesc:   "Browser",
+	},
+	{
+		Key:         "f",
+		Description: "Toggle favorite (pinned to top, persisted in config)",
+		ShortDesc:   "Favorite",
 	},
 	{
 		Key:         "c",

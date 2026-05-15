@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/mabd-dev/reposcan/internal"
@@ -31,6 +32,8 @@ var RootCmd = &cobra.Command{
 			fmt.Println(err)
 			return err
 		}
+		home, _ := os.UserHomeDir()
+		configs.ConfigFilePath = filepath.Join(home, paths.ConfigFilePath)
 
 		// validationResult configs data are valid
 		validationResult := config.Validate(configs)
@@ -137,6 +140,14 @@ func readFlags(cmd *cobra.Command, configs *config.Config) error {
 		return err
 	}
 	(*configs).Debug = debug
+
+	editor, err := cmd.Flags().GetString("editor")
+	if err != nil {
+		return err
+	}
+	if editor != "" {
+		(*configs).Editor = editor
+	}
 
 	return nil
 }
