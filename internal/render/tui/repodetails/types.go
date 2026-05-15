@@ -10,12 +10,16 @@ type DetailsSubMode int
 const (
 	DetailsSubModeFiles   DetailsSubMode = 0
 	DetailsSubModeCommits DetailsSubMode = 1
+	DetailsSubModeReadme  DetailsSubMode = 2
+
+	detailsSubModeCount = 3
 )
 
 type Model struct {
 	height  int
 	subMode DetailsSubMode
 	commits []string
+	readme  []string
 
 	repoState *report.RepoState
 	theme     theme.Theme

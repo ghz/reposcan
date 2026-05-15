@@ -1,6 +1,10 @@
 package repodetails
 
 import (
+	"os"
+	"path/filepath"
+	"strings"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/mabd-dev/reposcan/internal/gitx"
 	"github.com/mabd-dev/reposcan/internal/theme"
@@ -32,22 +36,30 @@ func (m *Model) SubMode() DetailsSubMode {
 	return m.subMode
 }
 
-// ToggleSubMode switches between files and commits view. rs is the currently
-// selected repo and is used to fetch commits when switching to commits mode.
+// ToggleSubMode cycles through the files, commits and readme views. rs is the
+// currently selected repo and is used to load data for the new mode.
 func (m *Model) ToggleSubMode(rs *report.RepoState) {
-	if m.subMode == DetailsSubModeFiles {
-		m.subMode = DetailsSubModeCommits
-		m.fetchCommitsForRepo(rs)
-	} else {
-		m.subMode = DetailsSubModeFiles
-		m.commits = nil
-	}
+	m.subMode = (m.subMode + 1) % detailsSubModeCount
+	m.loadForSubMode(rs)
 }
 
-// RefetchCommits re-fetches commits for the given repo (called when the cursor
-// moves while in commits mode).
-func (m *Model) RefetchCommits(rs *report.RepoState) {
-	m.fetchCommitsForRepo(rs)
+// ReloadForRepo reloads the data backing the current sub-mode (called when the
+// cursor moves to a different repo).
+func (m *Model) ReloadForRepo(rs *report.RepoState) {
+	m.loadForSubMode(rs)
+}
+
+// loadForSubMode fetches the data required by the active sub-mode and clears
+// data for the other modes so it stays in sync with the selected repo.
+func (m *Model) loadForSubMode(rs *report.RepoState) {
+	m.commits = nil
+	m.readme = nil
+	switch m.subMode {
+	case DetailsSubModeCommits:
+		m.fetchCommitsForRepo(rs)
+	case DetailsSubModeReadme:
+		m.fetchReadmeForRepo(rs)
+	}
 }
 
 func (m *Model) fetchCommitsForRepo(rs *report.RepoState) {
@@ -61,6 +73,30 @@ func (m *Model) fetchCommitsForRepo(rs *report.RepoState) {
 		return
 	}
 	m.commits = commits
+}
+
+// readmeCandidates lists the file names looked up for a repo's README, in
+// order of preference.
+var readmeCandidates = []string{
+	"README.md", "README.MD", "readme.md",
+	"README", "README.txt", "README.rst",
+}
+
+func (m *Model) fetchReadmeForRepo(rs *report.RepoState) {
+	if rs == nil {
+		m.readme = nil
+		return
+	}
+	for _, name := range readmeCandidates {
+		data, err := os.ReadFile(filepath.Join(rs.Path, name))
+		if err != nil {
+			continue
+		}
+		normalized := strings.ReplaceAll(string(data), "\r\n", "\n")
+		m.readme = strings.Split(strings.TrimRight(normalized, "\n"), "\n")
+		return
+	}
+	m.readme = []string{}
 }
 
 func (m Model) Init() tea.Cmd { return nil }

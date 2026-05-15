@@ -12,7 +12,7 @@ var reposTableKeybindings = []common.Keybinding{
 	},
 	{
 		Key:         "tab",
-		Description: "Toggle details: file changes / recent commits",
+		Description: "Cycle details: file changes / recent commits / README",
 		ShortDesc:   "Switch Details",
 	},
 	{

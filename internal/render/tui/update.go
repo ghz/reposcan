@@ -177,8 +177,8 @@ func (m Model) updateReposTable(msg tea.Msg) (tea.Model, tea.Cmd) {
 	prevCursor := m.reposTable.Cursor()
 	var cmd tea.Cmd
 	m.reposTable, cmd = m.reposTable.Update(msg)
-	if m.reposTable.Cursor() != prevCursor && m.repoDetails.SubMode() == repodetails.DetailsSubModeCommits {
-		m.repoDetails.RefetchCommits(m.reposTable.GetCurrentRepoState())
+	if m.reposTable.Cursor() != prevCursor && m.repoDetails.SubMode() != repodetails.DetailsSubModeFiles {
+		m.repoDetails.ReloadForRepo(m.reposTable.GetCurrentRepoState())
 	}
 	return m, cmd
 }

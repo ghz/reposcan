@@ -12,14 +12,18 @@ func (m *Model) View() string {
 		return ""
 	}
 
-	if m.subMode == DetailsSubModeCommits {
+	switch m.subMode {
+	case DetailsSubModeCommits:
 		return m.viewCommits()
+	case DetailsSubModeReadme:
+		return m.viewReadme()
+	default:
+		return m.viewFiles()
 	}
-	return m.viewFiles()
 }
 
-// viewTabs renders the file-changes / recent-commits switch as a tab bar,
-// with the active tab highlighted and a hint on the same line.
+// viewTabs renders the file-changes / recent-commits / readme switch as a tab
+// bar, with the active tab highlighted and a hint on the same line.
 func (m *Model) viewTabs() string {
 	active := m.theme.Styles.Base.
 		Foreground(m.theme.Colors.Accent).
@@ -28,18 +32,19 @@ func (m *Model) viewTabs() string {
 		Padding(0, 1)
 	inactive := m.theme.Styles.Muted.Padding(0, 1)
 
-	filesTab, commitsTab := inactive, inactive
-	if m.subMode == DetailsSubModeCommits {
-		commitsTab = active
-	} else {
-		filesTab = active
+	tab := func(mode DetailsSubMode, label string) string {
+		if m.subMode == mode {
+			return active.Render(label)
+		}
+		return inactive.Render(label)
 	}
 
 	hint := m.theme.Styles.Muted.Render("  tab to switch")
 	return lipgloss.JoinHorizontal(
 		lipgloss.Left,
-		filesTab.Render("File changes"),
-		commitsTab.Render("Recent commits"),
+		tab(DetailsSubModeFiles, "File changes"),
+		tab(DetailsSubModeCommits, "Recent commits"),
+		tab(DetailsSubModeReadme, "README"),
 		hint,
 	)
 }
@@ -103,6 +108,38 @@ func (m *Model) viewCommits() string {
 
 	if trimmed {
 		more := len(m.commits) - maxToShow
+		lines = append(lines, m.theme.Styles.Muted.Render("  ... (+"+strconv.Itoa(more)+" more)"))
+	}
+
+	return lipgloss.JoinVertical(lipgloss.Left, lines...)
+}
+
+func (m *Model) viewReadme() string {
+	style := m.theme.Styles.Base.Foreground(m.theme.Colors.Info)
+
+	lines := []string{
+		fmt.Sprintf("%s %s", style.Render("Path:"), m.repoState.Path),
+		m.viewTabs(),
+	}
+
+	if len(m.readme) == 0 {
+		lines = append(lines, m.theme.Styles.Muted.Render("    no README found"))
+		return lipgloss.JoinVertical(lipgloss.Left, lines...)
+	}
+
+	content := m.readme
+	maxToShow := m.height - len(lines) - 1
+	trimmed := len(content) > maxToShow
+	if trimmed {
+		content = content[:maxToShow]
+	}
+
+	for _, l := range content {
+		lines = append(lines, "  "+m.theme.Styles.Muted.Render(l))
+	}
+
+	if trimmed {
+		more := len(m.readme) - maxToShow
 		lines = append(lines, m.theme.Styles.Muted.Render("  ... (+"+strconv.Itoa(more)+" more)"))
 	}
 
