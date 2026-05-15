@@ -110,6 +110,11 @@ func TestReposTableFooterKeybindingsRouteThroughUpdate(t *testing.T) {
 			wantFocus: FocusGitMenuPopup,
 		},
 		{
+			name:      "git menu uppercase",
+			key:       tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'G'}},
+			wantFocus: FocusGitMenuPopup,
+		},
+		{
 			name:      "open remote",
 			key:       tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'w'}},
 			wantFocus: FocusReposTable,

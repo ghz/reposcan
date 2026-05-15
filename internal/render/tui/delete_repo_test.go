@@ -4,6 +4,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/mabd-dev/reposcan/internal/render/tui/repostable"
@@ -28,6 +29,31 @@ func TestDeleteRepoCmdRemovesDirectory(t *testing.T) {
 	}
 	if _, statErr := os.Lstat(repoPath); !os.IsNotExist(statErr) {
 		t.Fatalf("repo directory still exists or unexpected stat error: %v", statErr)
+	}
+}
+
+func TestDeleteRepoCmdTimesOutWhenRemoveBlocks(t *testing.T) {
+	oldRemoveAll := removeAll
+	oldTimeout := deleteRepoTimeout
+	removeAll = func(string) error {
+		select {}
+	}
+	deleteRepoTimeout = 10 * time.Millisecond
+	t.Cleanup(func() {
+		removeAll = oldRemoveAll
+		deleteRepoTimeout = oldTimeout
+	})
+
+	msg := deleteRepoCmd("repo", t.TempDir())()
+	result, ok := msg.(deleteRepoResultMsg)
+	if !ok {
+		t.Fatalf("message = %T, want deleteRepoResultMsg", msg)
+	}
+	if result.err == nil {
+		t.Fatal("deleteRepoCmd() error = nil, want timeout error")
+	}
+	if !strings.Contains(result.err.Error(), "timed out") {
+		t.Fatalf("deleteRepoCmd() error = %q, want timeout", result.err)
 	}
 }
 

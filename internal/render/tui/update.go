@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"strings"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/mabd-dev/reposcan/internal/gitx"
@@ -13,7 +14,35 @@ import (
 	"golang.design/x/clipboard"
 )
 
+var (
+	deleteRepoTimeout = 3 * time.Second
+	removeAll         = os.RemoveAll
+)
+
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	// Async results, ticks and window-size changes are global: they must be
+	// handled no matter which model currently has focus. Otherwise an
+	// operation in flight (a scan, a delete, a git push...) can get stuck --
+	// e.g. m.loading never clears and the UI freezes on "Loading..." -- if the
+	// user opens a popup while it runs.
+	if _, isKey := msg.(tea.KeyMsg); !isKey {
+		if nm, cmd := defaultUpdate(m, msg); nm != nil {
+			return nm, cmd
+		}
+	}
+
+	// While a scan is in flight the view only shows "Loading...", so action
+	// keys would open popups over an invisible UI. Ignore everything except
+	// quit until the scan result clears m.loading.
+	if m.loading {
+		if key, isKey := msg.(tea.KeyMsg); isKey {
+			if s := keyString(key); s == "q" || s == "esc" || s == "ctrl+c" {
+				return m, tea.Quit
+			}
+			return m, nil
+		}
+	}
+
 	switch m.currentFocus() {
 	case FocusReposTable:
 		return m.updateReposTable(msg)
@@ -37,7 +66,7 @@ func (m Model) updateReposTable(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch keyString(msg) {
 		case "q", "esc", "ctrl+c":
 			return m, tea.Quit
-		case "g":
+		case "g", "G":
 			if m.reposTable.GetCurrentRepoState() == nil {
 				return m, nil
 			}
@@ -125,14 +154,8 @@ func (m Model) updateReposTable(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	var cmd tea.Cmd
-	nm, cmd := defaultUpdate(m, msg)
-
-	if nm != nil {
-		return nm, cmd
-	}
-
 	prevCursor := m.reposTable.Cursor()
+	var cmd tea.Cmd
 	m.reposTable, cmd = m.reposTable.Update(msg)
 	if m.reposTable.Cursor() != prevCursor && m.repoDetails.SubMode() == repodetails.DetailsSubModeCommits {
 		m.repoDetails.RefetchCommits(m.reposTable.GetCurrentRepoState())
@@ -260,12 +283,6 @@ func (m Model) keybindingPopup(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	var cmd tea.Cmd
-	nm, cmd := defaultUpdate(m, msg)
-
-	if nm != nil {
-		return nm, cmd
-	}
 	return m, nil
 }
 
@@ -395,8 +412,18 @@ func deleteRepoCmd(targetName, path string) tea.Cmd {
 		if strings.TrimSpace(path) == "" {
 			return deleteRepoResultMsg{repoName: targetName, err: errors.New("empty folder path")}
 		}
-		err := os.RemoveAll(path)
-		return deleteRepoResultMsg{repoName: targetName, err: err}
+
+		errCh := make(chan error, 1)
+		go func() {
+			errCh <- removeAll(path)
+		}()
+
+		select {
+		case err := <-errCh:
+			return deleteRepoResultMsg{repoName: targetName, err: err}
+		case <-time.After(deleteRepoTimeout):
+			return deleteRepoResultMsg{repoName: targetName, err: errors.New("delete timed out; the folder may be locked by another process")}
+		}
 	}
 }
 

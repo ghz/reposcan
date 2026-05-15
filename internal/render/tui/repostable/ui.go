@@ -98,8 +98,8 @@ func setKeymaps(km table.KeyMap) {
 	km.LineDown.SetKeys("down", "j")
 	km.PageUp.SetKeys("pgup", tea.KeyCtrlU.String())
 	km.PageDown.SetKeys("pgdn", tea.KeyCtrlD.String())
-	km.GotoTop.SetKeys("home", "g")
-	km.GotoBottom.SetKeys("end", "G")
+	km.GotoTop.SetKeys("home")
+	km.GotoBottom.SetKeys("end")
 }
 
 func createFolderRows(folders []report.FolderEntry, reposByPath map[string]report.RepoState, t theme.Theme) []table.Row {
