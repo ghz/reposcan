@@ -100,7 +100,7 @@ Launch the TUI with the default `interactive` output:
 reposcan
 ```
 
-### View modes — `←` / `→` to switch
+### View modes — `Tab` / `Shift+Tab` to switch
 
 | Mode | Description |
 |---|---|
@@ -113,9 +113,9 @@ reposcan
 
 | Key | Action |
 |---|---|
+| `Tab` / `Shift+Tab` | Switch view mode |
 | `↑` / `↓` or `j` / `k` | Navigate |
-| `←` / `→` or `h` / `l` | Switch view mode |
-| `Tab` | Toggle details panel: **file changes** ↔ **recent commits** |
+| `←` / `→` or `h` / `l` | Switch details tab: **file changes** / **recent commits** / **README** |
 | `+` / `-` | Expand / collapse a repo to show its branches inline (ahead/behind per branch) |
 | `c` | Checkout the selected branch (only on expanded branch rows) |
 | `g` | Open the **Git actions** menu (quick save, push, pull, fetch, browser) |
@@ -258,7 +258,7 @@ Each step overrides the one before it.
 - [x] Windows support
 - [x] Git worktree support
 - [x] 4-mode tab view (non-sync / all repos / all dirs / non-repo dirs)
-- [x] Details panel: file changes and recent commits
+- [x] Details panel: file changes, recent commits and README tabs
 - [x] Expandable repo tree — `+`/`-` to list each repo's branches inline
 - [x] Configurable editor (`o` key)
 - [x] Open remote in browser (`g` key)
