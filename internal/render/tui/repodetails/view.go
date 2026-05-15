@@ -18,12 +18,38 @@ func (m *Model) View() string {
 	return m.viewFiles()
 }
 
+// viewTabs renders the file-changes / recent-commits switch as a tab bar,
+// with the active tab highlighted and a hint on the same line.
+func (m *Model) viewTabs() string {
+	active := m.theme.Styles.Base.
+		Foreground(m.theme.Colors.Accent).
+		Background(m.theme.Colors.TableAltRow).
+		Bold(true).
+		Padding(0, 1)
+	inactive := m.theme.Styles.Muted.Padding(0, 1)
+
+	filesTab, commitsTab := inactive, inactive
+	if m.subMode == DetailsSubModeCommits {
+		commitsTab = active
+	} else {
+		filesTab = active
+	}
+
+	hint := m.theme.Styles.Muted.Render("  tab to switch")
+	return lipgloss.JoinHorizontal(
+		lipgloss.Left,
+		filesTab.Render("File changes"),
+		commitsTab.Render("Recent commits"),
+		hint,
+	)
+}
+
 func (m *Model) viewFiles() string {
 	style := m.theme.Styles.Base.Foreground(m.theme.Colors.Info)
 
 	lines := []string{
 		fmt.Sprintf("%s %s", style.Render("Path:"), m.repoState.Path),
-		style.Render("File Changes:"),
+		m.viewTabs(),
 	}
 
 	if len(m.repoState.UncommitedFiles) > 0 {
@@ -56,7 +82,7 @@ func (m *Model) viewCommits() string {
 
 	lines := []string{
 		fmt.Sprintf("%s %s", style.Render("Path:"), m.repoState.Path),
-		style.Render("Recent Commits:"),
+		m.viewTabs(),
 	}
 
 	if len(m.commits) == 0 {
