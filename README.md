@@ -116,29 +116,54 @@ reposcan
 | `↑` / `↓` or `j` / `k` | Navigate |
 | `←` / `→` or `h` / `l` | Switch view mode |
 | `Tab` | Toggle details panel: **file changes** ↔ **recent commits** |
-| `n` | Create a new repo from selected folder (local or GitHub) |
-| `o` | Open selected repo/folder in editor (VS Code by default) |
-| `g` | Open remote URL in browser |
+| `g` | Open the **Git actions** menu (quick save, push, pull, fetch, browser) |
+| `w` | Open remote URL in browser |
+| `o` | Open selected repo/folder in editor (VS Code by default, configurable) |
+| `e` | Open selected repo/folder in the system file manager |
 | `f` | Toggle favorite — pinned to top, persisted in config |
+| `n` | Create a new repo from selected folder (local or GitHub) |
+| `d` | Delete the selected local folder (typed `YES` confirmation) |
 | `c` | Copy path to clipboard |
 | `r` | Refresh |
-| `/` | Filter by repo/branch name |
+| `/` | Search by repo/branch name |
 | `?` | Help popup |
 | `q` / `Esc` | Quit |
 
-### Creating a repo from a folder (`n`)
+### Git actions menu (`g`)
 
-In `all dirs` or `non-repo dirs` mode, press `n` on any plain folder to open a creation dialog:
+Press `g` on a git repository to open a menu of git operations:
 
 ```
 ┌──────────────────────────────────────────┐
-│              Nouveau repo                │
+│               Git actions                │
 │                                          │
-│  Nom: [monprojet                       ] │
+│  [1]  Quick save — add . + commit + push  │
+│  [2]  Push                                │
+│  [3]  Pull                                │
+│  [4]  Fetch                               │
+│  [5]  Open remote URL in browser          │
 │                                          │
-│  [l]  Local only                         │
-│  [p]  GitHub — private                   │
-│  [u]  GitHub — public                    │
+│  [esc] Cancel                            │
+└──────────────────────────────────────────┘
+```
+
+- **Quick save** runs `git add .`, commits a `wip` snapshot, then pushes.
+- The repo's state in the table refreshes once the operation finishes.
+
+### Creating a repo from a folder (`n`)
+
+In `all dirs` or `non-repo dirs` mode, press `n` on any plain folder to open a
+two-step creation dialog — first pick the repo type, then enter a name:
+
+```
+┌──────────────────────────────────────────┐
+│                New repo                  │
+│                                          │
+│  Repo type:                               │
+│                                          │
+│  [1]  Local only                          │
+│  [2]  GitHub private                      │
+│  [3]  GitHub public                       │
 │                                          │
 │  [esc] Cancel                            │
 └──────────────────────────────────────────┘
@@ -146,6 +171,11 @@ In `all dirs` or `non-repo dirs` mode, press `n` on any plain folder to open a c
 
 - **Local** — `git init` + `git add .` + initial commit
 - **GitHub** — same, then [`gh repo create`](https://cli.github.com/) (requires the `gh` CLI installed and authenticated)
+
+### Deleting a folder (`d`)
+
+Press `d` on a selected folder to permanently delete it from disk. The dialog
+requires you to type `YES` and press `enter` to confirm — `esc` cancels.
 
 ---
 
@@ -223,7 +253,9 @@ Each step overrides the one before it.
 - [x] Open remote in browser (`g` key)
 - [x] Favorites pinned to top (`f` key, persisted)
 - [x] Create repo from folder — local or GitHub (`n` key)
-- [ ] Git push / pull / fetch from TUI
+- [x] Git actions menu — quick save, push, pull, fetch (`g` key)
+- [x] Delete folder from disk with typed confirmation (`d` key)
+- [x] Open in system file manager (`e` key)
 - [ ] Per-branch status view
 
 ---
