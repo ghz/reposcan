@@ -11,8 +11,8 @@ var reposTableKeybindings = []common.Keybinding{
 		ShortDesc:   "Navigate",
 	},
 	{
-		Key:         "tab",
-		Description: "Cycle details: file changes / recent commits / README",
+		Key:         "tab/⇧tab",
+		Description: "Cycle details: file changes / recent commits / README (⇧tab goes back)",
 		ShortDesc:   "Switch Details",
 	},
 	{

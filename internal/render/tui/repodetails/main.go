@@ -36,10 +36,15 @@ func (m *Model) SubMode() DetailsSubMode {
 	return m.subMode
 }
 
-// ToggleSubMode cycles through the files, commits and readme views. rs is the
-// currently selected repo and is used to load data for the new mode.
-func (m *Model) ToggleSubMode(rs *report.RepoState) {
-	m.subMode = (m.subMode + 1) % detailsSubModeCount
+// CycleSubMode moves through the files, commits and readme views. forward
+// advances to the next tab, otherwise it goes back to the previous one. rs is
+// the currently selected repo and is used to load data for the new mode.
+func (m *Model) CycleSubMode(rs *report.RepoState, forward bool) {
+	if forward {
+		m.subMode = (m.subMode + 1) % detailsSubModeCount
+	} else {
+		m.subMode = (m.subMode - 1 + detailsSubModeCount) % detailsSubModeCount
+	}
 	m.loadForSubMode(rs)
 }
 

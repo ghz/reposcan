@@ -131,7 +131,10 @@ func (m Model) updateReposTable(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.pushFocus(FocusDeleteRepoPopup)
 			return m, nil
 		case "tab":
-			m.repoDetails.ToggleSubMode(m.reposTable.GetCurrentRepoState())
+			m.repoDetails.CycleSubMode(m.reposTable.GetCurrentRepoState(), true)
+			return m, nil
+		case "shift+tab":
+			m.repoDetails.CycleSubMode(m.reposTable.GetCurrentRepoState(), false)
 			return m, nil
 		case "+", "=":
 			m.reposTable.ExpandCurrent()

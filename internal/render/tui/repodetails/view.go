@@ -39,7 +39,7 @@ func (m *Model) viewTabs() string {
 		return inactive.Render(label)
 	}
 
-	hint := m.theme.Styles.Muted.Render("  tab to switch")
+	hint := m.theme.Styles.Muted.Render("  tab / ⇧tab to switch")
 	return lipgloss.JoinHorizontal(
 		lipgloss.Left,
 		tab(DetailsSubModeFiles, "File changes"),
