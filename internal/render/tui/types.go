@@ -19,10 +19,10 @@ import (
 type ViewMode int
 
 const (
-	ViewModeDirty       ViewMode = 0 // repos non-sync (default)
-	ViewModeAllRepos    ViewMode = 1 // tous les repos git
-	ViewModeAllDirs     ViewMode = 2 // tous les dossiers directs (repos + non-repos)
-	ViewModeNonRepoDirs ViewMode = 3 // dossiers directs sans repo git
+	ViewModeDirty       ViewMode = 0 // non-sync repos (default)
+	ViewModeAllRepos    ViewMode = 1 // all git repos
+	ViewModeAllDirs     ViewMode = 2 // all direct folders (repos + non-repos)
+	ViewModeNonRepoDirs ViewMode = 3 // direct folders without a git repo
 )
 
 func (v ViewMode) Label() string {
@@ -94,11 +94,11 @@ const (
 func (k createKind) Label() string {
 	switch k {
 	case kindLocal:
-		return "Local uniquement"
+		return "Local only"
 	case kindGHPrivate:
-		return "GitHub — privé"
+		return "GitHub private"
 	case kindGHPublic:
-		return "GitHub — public"
+		return "GitHub public"
 	}
 	return ""
 }

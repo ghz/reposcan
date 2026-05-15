@@ -179,7 +179,7 @@ func (m Model) updateReposFilter(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	// on each keystorke, update repos list
+	// Update the repos list on each keystroke.
 	var cmd tea.Cmd
 	m.reposFilter, cmd = m.reposFilter.Update(msg)
 
@@ -310,7 +310,7 @@ func createLocalRepoCmd(path string) tea.Cmd {
 func createGitHubRepoCmd(name, path string, private bool) tea.Cmd {
 	label := "GitHub public"
 	if private {
-		label = "GitHub privé"
+		label = "GitHub private"
 	}
 	return func() tea.Msg {
 		err := rollbackCreatedGitDirOnError(path, func() error {
@@ -402,7 +402,7 @@ func defaultUpdate(m Model, msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.loading = true
 		request := generateReport{configs: m.configs}
-		return m, tea.Batch(makeAlert(alerts.AlertTypeInfo, "Repo créé ("+msg.label+")"), request.Cmd())
+		return m, tea.Batch(makeAlert(alerts.AlertTypeInfo, "Repo created ("+msg.label+")"), request.Cmd())
 
 	case alerts.AddAlertMsg, alerts.TickMsg:
 		var cmd tea.Cmd

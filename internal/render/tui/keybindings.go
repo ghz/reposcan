@@ -120,35 +120,35 @@ var gitMenuKeybindings = []common.Keybinding{
 var createRepoKindKeybindings = []common.Keybinding{
 	{
 		Key:         "1",
-		Description: "Local uniquement",
+		Description: "Local only",
 		ShortDesc:   "Local",
 	},
 	{
 		Key:         "2",
-		Description: "GitHub — privé",
-		ShortDesc:   "GH privé",
+		Description: "GitHub private",
+		ShortDesc:   "GH private",
 	},
 	{
 		Key:         "3",
-		Description: "GitHub — public",
+		Description: "GitHub public",
 		ShortDesc:   "GH public",
 	},
 	{
 		Key:         "esc",
-		Description: "Annuler",
-		ShortDesc:   "Annuler",
+		Description: "Cancel",
+		ShortDesc:   "Cancel",
 	},
 }
 
 var createRepoNameKeybindings = []common.Keybinding{
 	{
 		Key:         "enter",
-		Description: "Créer le repo",
-		ShortDesc:   "Créer",
+		Description: "Create repo",
+		ShortDesc:   "Create",
 	},
 	{
 		Key:         "esc",
-		Description: "Retour au choix du type",
-		ShortDesc:   "Retour",
+		Description: "Back to type selection",
+		ShortDesc:   "Back",
 	},
 }

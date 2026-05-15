@@ -11,32 +11,32 @@ func (m *Model) generateCreateRepoPopup() string {
 	textStyle := t.Styles.PopupText
 	mutedStyle := t.Styles.PopupText.Foreground(t.Colors.Muted)
 
-	title := t.Styles.PopupHeader.Render("Nouveau repo")
+	title := t.Styles.PopupHeader.Render("New repo")
 	separator := mutedStyle.Render("──────────────────────────────────")
 
 	if m.createStep == stepChooseKind {
 		actions := lipgloss.JoinVertical(lipgloss.Left,
-			lipgloss.JoinHorizontal(lipgloss.Left, keyStyle.Render("[1]"), textStyle.Render("  Local uniquement")),
-			lipgloss.JoinHorizontal(lipgloss.Left, keyStyle.Render("[2]"), textStyle.Render("  GitHub — privé")),
-			lipgloss.JoinHorizontal(lipgloss.Left, keyStyle.Render("[3]"), textStyle.Render("  GitHub — public")),
+			lipgloss.JoinHorizontal(lipgloss.Left, keyStyle.Render("[1]"), textStyle.Render("  Local only")),
+			lipgloss.JoinHorizontal(lipgloss.Left, keyStyle.Render("[2]"), textStyle.Render("  GitHub private")),
+			lipgloss.JoinHorizontal(lipgloss.Left, keyStyle.Render("[3]"), textStyle.Render("  GitHub public")),
 		)
 
 		content := lipgloss.JoinVertical(lipgloss.Left,
 			title,
 			"",
-			textStyle.Render("Type de repo:"),
+			textStyle.Render("Repo type:"),
 			"",
 			actions,
 			"",
 			separator,
 			"",
-			mutedStyle.Render("[esc] Annuler"),
+			mutedStyle.Render("[esc] Cancel"),
 		)
 		return t.Styles.Popup.Render(content)
 	}
 
 	nameRow := lipgloss.JoinHorizontal(lipgloss.Left,
-		textStyle.Render("Nom: "),
+		textStyle.Render("Name: "),
 		m.createRepoNameInput.View(),
 	)
 
@@ -49,7 +49,7 @@ func (m *Model) generateCreateRepoPopup() string {
 		"",
 		separator,
 		"",
-		mutedStyle.Render("[enter] Créer   [esc] Retour"),
+		mutedStyle.Render("[enter] Create   [esc] Back"),
 	)
 	return t.Styles.Popup.Render(content)
 }
