@@ -11,6 +11,7 @@ const (
 	FocusReposFilter
 	FocusHelpPopup
 	FocusCreateRepoPopup
+	FocusGitMenuPopup
 )
 
 func (m Model) currentFocus() FocusState {
@@ -52,6 +53,8 @@ func (m *Model) focusCurrentModel() {
 		m.reposFilter.Focus()
 	case FocusCreateRepoPopup:
 		m.createRepoNameInput.Focus()
+	case FocusGitMenuPopup:
+		break
 	case FocusHelpPopup:
 		break
 	}
@@ -65,6 +68,8 @@ func (m *Model) blurCurrentModel() {
 		m.reposFilter.Blur()
 	case FocusCreateRepoPopup:
 		m.createRepoNameInput.Blur()
+	case FocusGitMenuPopup:
+		break
 	case FocusHelpPopup:
 		break
 	}
@@ -78,6 +83,8 @@ func (m *Model) resetCurrentModel() {
 		m.reposFilter.SetValue("")
 	case FocusCreateRepoPopup:
 		m.createRepoNameInput.SetValue("")
+	case FocusGitMenuPopup:
+		break
 	case FocusHelpPopup:
 		break
 	}
@@ -87,12 +94,16 @@ func (m *Model) keybindings() []common.Keybinding {
 	switch m.currentFocus() {
 	case FocusReposTable:
 		entry := m.reposTable.GetCurrentFolderEntry()
-		if entry != nil && !entry.IsRepo {
-			return reposTableKeybindings
-		}
 		result := make([]common.Keybinding, 0, len(reposTableKeybindings))
 		for _, kb := range reposTableKeybindings {
-			if kb.Key != "n" {
+			if entry == nil || entry.IsRepo {
+				if kb.Key != "n" {
+					result = append(result, kb)
+				}
+				continue
+			}
+
+			if kb.Key != "g" {
 				result = append(result, kb)
 			}
 		}
@@ -106,6 +117,8 @@ func (m *Model) keybindings() []common.Keybinding {
 			return createRepoNameKeybindings
 		}
 		return createRepoKindKeybindings
+	case FocusGitMenuPopup:
+		return gitMenuKeybindings
 	}
 	return []common.Keybinding{}
 }

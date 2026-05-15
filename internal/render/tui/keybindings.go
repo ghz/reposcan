@@ -16,34 +16,14 @@ var reposTableKeybindings = []common.Keybinding{
 		ShortDesc:   "Details",
 	},
 	{
-		Key:         "S",
-		Description: "Quick save: git add . + commit wip + push",
-		ShortDesc:   "Quick save",
-	},
-	{
-		Key:         "P",
-		Description: "Git push",
-		ShortDesc:   "Push",
-	},
-	{
-		Key:         "p",
-		Description: "Git pull",
-		ShortDesc:   "Pull",
-	},
-	{
-		Key:         "F",
-		Description: "Git fetch",
-		ShortDesc:   "Fetch",
+		Key:         "g",
+		Description: "Open Git actions menu",
+		ShortDesc:   "Git",
 	},
 	{
 		Key:         "o",
 		Description: "Open in editor (VS Code by default, configurable)",
 		ShortDesc:   "Open",
-	},
-	{
-		Key:         "g",
-		Description: "Open remote URL in browser",
-		ShortDesc:   "Browser",
 	},
 	{
 		Key:         "f",
@@ -96,6 +76,39 @@ var helpPopupKeybindings = []common.Keybinding{
 		Key:         "q/<esc>",
 		Description: "Close Popup",
 		ShortDesc:   "Close",
+	},
+}
+
+var gitMenuKeybindings = []common.Keybinding{
+	{
+		Key:         "1",
+		Description: "Quick save: git add . + commit wip + push",
+		ShortDesc:   "Quick save",
+	},
+	{
+		Key:         "2",
+		Description: "Git push",
+		ShortDesc:   "Push",
+	},
+	{
+		Key:         "3",
+		Description: "Git pull",
+		ShortDesc:   "Pull",
+	},
+	{
+		Key:         "4",
+		Description: "Git fetch",
+		ShortDesc:   "Fetch",
+	},
+	{
+		Key:         "5",
+		Description: "Open remote URL in browser",
+		ShortDesc:   "Browser",
+	},
+	{
+		Key:         "esc",
+		Description: "Cancel",
+		ShortDesc:   "Cancel",
 	},
 }
 

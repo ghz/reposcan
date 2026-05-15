@@ -72,6 +72,17 @@ func (m Model) View() string {
 		)
 	}
 
+	if m.currentFocus() == FocusGitMenuPopup {
+		popup := m.generateGitMenuPopup()
+		view = overlay.PlaceOverlayWithPosition(
+			overlay.OverlayPositionCenter,
+			m.width, m.height,
+			popup, view,
+			true,
+			overlay.WithWhitespaceChars(" "),
+		)
+	}
+
 	return view
 }
 

@@ -22,6 +22,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.keybindingPopup(msg)
 	case FocusCreateRepoPopup:
 		return m.updateCreateRepoPopup(msg)
+	case FocusGitMenuPopup:
+		return m.updateGitMenuPopup(msg)
 	}
 	return m, nil
 }
@@ -32,18 +34,12 @@ func (m Model) updateReposTable(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "q", "esc", "ctrl+c":
 			return m, tea.Quit
-		case "S":
-			rs := m.reposTable.GetCurrentRepoState()
-			if rs == nil {
+		case "g":
+			if m.reposTable.GetCurrentRepoState() == nil {
 				return m, nil
 			}
-			return m, quickSaveCmd(rs.Path)
-		case "p":
-			return m, gitPull(m)
-		case "P":
-			return m, gitPush(m)
-		case "F":
-			return m, gitFetch(m)
+			m.pushFocus(FocusGitMenuPopup)
+			return m, nil
 		case "right", "l":
 			m.viewMode = m.viewMode.Next()
 			m.applyViewMode()
@@ -62,17 +58,6 @@ func (m Model) updateReposTable(msg tea.Msg) (tea.Model, tea.Cmd) {
 				cmd := exec.Command(editor, path)
 				_ = cmd.Start()
 			}
-			return m, nil
-		case "g":
-			rs := m.reposTable.GetCurrentRepoState()
-			if rs == nil {
-				return m, nil
-			}
-			url, err := gitx.GetRemoteWebURL(rs.Path)
-			if err != nil || url == "" {
-				return m, nil
-			}
-			openBrowser(url)
 			return m, nil
 		case "f":
 			rs := m.reposTable.GetCurrentRepoState()
@@ -131,6 +116,46 @@ func (m Model) updateReposTable(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
+func (m Model) updateGitMenuPopup(msg tea.Msg) (tea.Model, tea.Cmd) {
+	keyMsg, isKey := msg.(tea.KeyMsg)
+	if !isKey {
+		return m, nil
+	}
+
+	rs := m.reposTable.GetCurrentRepoState()
+	if rs == nil {
+		m.popFocus(false)
+		return m, nil
+	}
+
+	switch keyMsg.String() {
+	case "q", "esc", "ctrl+c":
+		m.popFocus(false)
+		return m, nil
+	case "1":
+		m.popFocus(false)
+		return m, quickSaveCmd(rs.Path)
+	case "2":
+		m.popFocus(false)
+		return m, gitPush(m)
+	case "3":
+		m.popFocus(false)
+		return m, gitPull(m)
+	case "4":
+		m.popFocus(false)
+		return m, gitFetch(m)
+	case "5":
+		m.popFocus(false)
+		url, err := gitx.GetRemoteWebURL(rs.Path)
+		if err != nil || url == "" {
+			return m, makeAlert(alerts.MsgTypeError, "remote URL unavailable")
+		}
+		openBrowser(url)
+		return m, nil
+	}
+
+	return m, nil
+}
 func (m Model) updateReposFilter(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
