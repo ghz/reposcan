@@ -133,7 +133,27 @@ func (m Model) updateReposTable(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "tab":
 			m.repoDetails.ToggleSubMode(m.reposTable.GetCurrentRepoState())
 			return m, nil
+		case "+", "=":
+			m.reposTable.ExpandCurrent()
+			return m, nil
+		case "-", "_":
+			m.reposTable.CollapseCurrent()
+			return m, nil
 		case "c":
+			// Checkout applies only to branch (child) rows.
+			bs := m.reposTable.GetCurrentBranchStatus()
+			if bs == nil {
+				return m, nil
+			}
+			if bs.IsCurrent {
+				return m, makeAlert(alerts.AlertTypeInfo, "Already on "+bs.Name)
+			}
+			rs := m.reposTable.GetCurrentRepoState()
+			if rs == nil {
+				return m, nil
+			}
+			return m, gitCheckoutCmd(rs.Path, bs.Name)
+		case "p":
 			path := m.reposTable.GetCurrentPath()
 			if path == "" {
 				return m, nil
@@ -362,6 +382,18 @@ func quickSaveCmd(path string) tea.Cmd {
 	}
 }
 
+type gitCheckoutResultMsg struct {
+	branch string
+	err    error
+}
+
+func gitCheckoutCmd(path, branch string) tea.Cmd {
+	return func() tea.Msg {
+		_, err := gitx.GitCheckout(path, branch)
+		return gitCheckoutResultMsg{branch: branch, err: err}
+	}
+}
+
 func createLocalRepoCmd(path string) tea.Cmd {
 	return func() tea.Msg {
 		err := rollbackCreatedGitDirOnError(path, func() error {
@@ -479,6 +511,13 @@ func defaultUpdate(m Model, msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.reposBeingUpdated = deleteRepo(m.reposBeingUpdated, index)
 		}
 		return m, tea.Batch(makeAlert(alerts.AlertTypeInfo, "fetched"), gitRefreshRepo(m))
+
+	case gitCheckoutResultMsg:
+		if msg.err != nil {
+			logger.Warn(msg.err.Error())
+			return m, makeAlert(alerts.MsgTypeError, "checkout failed: "+msg.err.Error())
+		}
+		return m, tea.Batch(makeAlert(alerts.AlertTypeInfo, "checked out "+msg.branch), gitRefreshRepo(m))
 
 	case gitRefreshRepoResultMsg:
 		m.reposTable.UpdateRepoState(msg.index, msg.newRepoState)

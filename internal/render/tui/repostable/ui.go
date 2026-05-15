@@ -7,6 +7,7 @@ import (
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/mabd-dev/reposcan/internal/gitx"
 	"github.com/mabd-dev/reposcan/internal/theme"
 	"github.com/mabd-dev/reposcan/pkg/report"
 )
@@ -29,21 +30,89 @@ func createColumns(maxWidth int) []table.Column {
 	}
 }
 
-func createRows(repoStates []report.RepoState, favorites map[string]bool, theme theme.Theme) []table.Row {
-	rows := make([]table.Row, 0, len(repoStates))
-	for _, rs := range repoStates {
-		state := getStateColumnStr(rs, theme)
-		name := rs.Repo
-		if favorites[rs.Path] {
-			name = "★ " + name
+// buildRepoRows turns filteredRepos into table rows. Expanded repos are
+// followed by one indented row per local branch. The returned rowRefs slice is
+// parallel to the rows and maps each visual row back to its repo (and branch).
+func (m *Model) buildRepoRows() ([]table.Row, []rowRef) {
+	rows := make([]table.Row, 0, len(m.filteredRepos))
+	refs := make([]rowRef, 0, len(m.filteredRepos))
+
+	for i, rs := range m.filteredRepos {
+		expanded := m.expanded[rs.ID]
+		rows = append(rows, repoRow(rs, expanded, m.favorites[rs.Path], m.theme))
+		refs = append(refs, rowRef{repoIdx: i, branchIx: -1})
+
+		if expanded {
+			for bi, b := range m.branchCache[rs.ID] {
+				rows = append(rows, branchRow(b, m.theme))
+				refs = append(refs, rowRef{repoIdx: i, branchIx: bi})
+			}
 		}
-		rows = append(rows, table.Row{
-			name,
-			rs.Branch,
-			state,
-		})
 	}
-	return rows
+	return rows, refs
+}
+
+// repoRow renders a single repo header row. The leading marker shows whether
+// the repo is expanded (▾) or collapsed (▸).
+func repoRow(rs report.RepoState, expanded, favorite bool, t theme.Theme) table.Row {
+	marker := "▸ "
+	if expanded {
+		marker = "▾ "
+	}
+
+	name := marker
+	if favorite {
+		name += "★ "
+	}
+	name += rs.Repo
+
+	return table.Row{
+		name,
+		rs.Branch,
+		getStateColumnStr(rs, t),
+	}
+}
+
+// branchRow renders one indented branch row beneath its repo. The current
+// branch is marked with a "*".
+func branchRow(b gitx.BranchStatus, t theme.Theme) table.Row {
+	indent := "    "
+	if b.IsCurrent {
+		indent = "  * "
+	}
+
+	upstream := t.Styles.Muted.Render("—")
+	if b.Upstream != "" {
+		upstream = t.Styles.Muted.Render("→ " + b.Upstream)
+	}
+
+	return table.Row{
+		indent + b.Name,
+		upstream,
+		getBranchStateStr(b, t),
+	}
+}
+
+// getBranchStateStr renders the ahead/behind status for a single branch.
+func getBranchStateStr(b gitx.BranchStatus, t theme.Theme) string {
+	switch {
+	case b.Upstream == "":
+		return t.Styles.Muted.Render("no upstream")
+	case b.Gone:
+		return lipgloss.NewStyle().Foreground(t.Colors.Error).Render("upstream gone")
+	default:
+		aheadColor := t.Colors.Muted
+		if b.Ahead > 0 {
+			aheadColor = t.Colors.Warning
+		}
+		behindColor := t.Colors.Muted
+		if b.Behind > 0 {
+			behindColor = t.Colors.Warning
+		}
+		ahead := lipgloss.NewStyle().Foreground(aheadColor).Render(fmt.Sprintf("↑%-d", b.Ahead))
+		behind := lipgloss.NewStyle().Foreground(behindColor).Render(fmt.Sprintf("↓%-d", b.Behind))
+		return ahead + " " + behind
+	}
 }
 
 func getStateColumnStr(rs report.RepoState, t theme.Theme) string {

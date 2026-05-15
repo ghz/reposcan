@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+### Added
+
+- Expandable repo tree in the TUI table: `+`/`-` expand or collapse a repo to list its branches inline, each with upstream and ahead/behind status. Branches are fetched lazily on first expand
+- Branch checkout from the TUI: `c` on an expanded branch row checks out that branch
+
+### Changed
+
+- TUI: copy-path keybinding moved from `c` to `p` (freeing `c` for branch checkout)
+- TUI: the Git actions menu now shows the target project and checked-out branch to prevent acting on the wrong repo/branch
+
 
 ## [1.3.8] - 2026-04-27
 
