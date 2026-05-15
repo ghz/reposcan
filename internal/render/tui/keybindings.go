@@ -16,6 +16,26 @@ var reposTableKeybindings = []common.Keybinding{
 		ShortDesc:   "View",
 	},
 	{
+		Key:         "S",
+		Description: "Quick save: git add . + commit wip + push",
+		ShortDesc:   "Quick save",
+	},
+	{
+		Key:         "P",
+		Description: "Git push",
+		ShortDesc:   "Push",
+	},
+	{
+		Key:         "p",
+		Description: "Git pull",
+		ShortDesc:   "Pull",
+	},
+	{
+		Key:         "F",
+		Description: "Git fetch",
+		ShortDesc:   "Fetch",
+	},
+	{
 		Key:         "d",
 		Description: "Toggle details: file changes / recent commits",
 		ShortDesc:   "Details",

@@ -206,10 +206,46 @@ func AddAll(path string) error {
 	return err
 }
 
+// GitCommit creates a commit with the given message in the repository at path.
+func GitCommit(path, message string) error {
+	_, err := RunGitCommand(path, "commit", "-m", message)
+	return err
+}
+
 // CommitInitial creates the first commit in the repository at path.
 func CommitInitial(path string) error {
-	_, err := RunGitCommand(path, "commit", "-m", "initial commit")
-	return err
+	return GitCommit(path, "initial commit")
+}
+
+// QuickSaveResult describes what QuickSave did.
+type QuickSaveResult struct {
+	Committed bool
+	Pushed    bool
+}
+
+// QuickSave runs git add . → git commit -m "wip" → git push.
+// If there is nothing to commit the commit step is skipped and push still runs.
+func QuickSave(path string) (QuickSaveResult, error) {
+	var r QuickSaveResult
+
+	if err := AddAll(path); err != nil {
+		return r, err
+	}
+
+	if err := GitCommit(path, "wip"); err != nil {
+		if !strings.Contains(err.Error(), "nothing to commit") {
+			return r, err
+		}
+	} else {
+		r.Committed = true
+	}
+
+	if _, err := GitPush(path); err != nil {
+		return r, err
+	}
+	r.Pushed = true
+
+	return r, nil
 }
 
 // GitHubCreateRepo uses the gh CLI to create a GitHub repo named repoName,

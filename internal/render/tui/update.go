@@ -32,12 +32,18 @@ func (m Model) updateReposTable(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "q", "esc", "ctrl+c":
 			return m, tea.Quit
-		// case "p":
-		// 	return m, gitPull(m)
-		// case "P":
-		// 	return m, gitPush(m)
-		// case "f":
-		// 	return m, gitFetch(m)
+		case "S":
+			rs := m.reposTable.GetCurrentRepoState()
+			if rs == nil {
+				return m, nil
+			}
+			return m, quickSaveCmd(rs.Path)
+		case "p":
+			return m, gitPull(m)
+		case "P":
+			return m, gitPush(m)
+		case "F":
+			return m, gitFetch(m)
 		case "tab":
 			m.viewMode = m.viewMode.Next()
 			m.applyViewMode()
@@ -91,16 +97,7 @@ func (m Model) updateReposTable(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			path := shellEscapePath(rs.Path)
 			clipboard.Write(clipboard.FmtText, []byte(path))
-
-			return m, func() tea.Msg {
-				return alerts.AddAlertMsg{
-					Msg: alerts.Alert{
-						Type:    alerts.AlertTypeInfo,
-						Title:   "",
-						Message: "Path copied to clipboard",
-					},
-				}
-			}
+			return m, makeAlert(alerts.AlertTypeInfo, "Path copied to clipboard")
 		case "r":
 			m.loading = true
 			request := generateReport{configs: m.configs}
@@ -203,6 +200,18 @@ func (m Model) updateCreateRepoPopup(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
+type quickSaveResultMsg struct {
+	result gitx.QuickSaveResult
+	err    error
+}
+
+func quickSaveCmd(path string) tea.Cmd {
+	return func() tea.Msg {
+		result, err := gitx.QuickSave(path)
+		return quickSaveResultMsg{result: result, err: err}
+	}
+}
+
 func createLocalRepoCmd(path string) tea.Cmd {
 	return func() tea.Msg {
 		if err := gitx.InitRepo(path); err != nil {
@@ -246,43 +255,52 @@ func defaultUpdate(m Model, msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width, m.height = msg.Width, msg.Height
 		return m, nil
 
+	case quickSaveResultMsg:
+		if msg.err != nil {
+			return m, makeAlert(alerts.MsgTypeError, msg.err.Error())
+		}
+		label := "pushed"
+		if msg.result.Committed {
+			label = "committed (wip) + pushed"
+		}
+		return m, tea.Batch(makeAlert(alerts.AlertTypeInfo, label), gitRefreshRepo(m))
+
 	case gitPushResultMsg:
-		return m, gitRefreshRepo(m)
+		if len(msg.Err) != 0 {
+			logger.Warn(msg.Err)
+			return m, makeAlert(alerts.MsgTypeError, "push failed: "+msg.Err)
+		}
+		return m, tea.Batch(makeAlert(alerts.AlertTypeInfo, "pushed"), gitRefreshRepo(m))
 
 	case gitPullResultMsg:
 		if len(msg.Err) != 0 {
 			logger.Warn(msg.Err)
-			return m, nil
+			return m, makeAlert(alerts.MsgTypeError, "pull failed: "+msg.Err)
 		}
-
 		rs := m.reposTable.GetCurrentRepoState()
 		if rs == nil {
 			return m, nil
 		}
-
 		index := getRepoIndex(m.reposBeingUpdated, rs.ID)
 		if index != -1 {
 			m.reposBeingUpdated = deleteRepo(m.reposBeingUpdated, index)
 		}
-		return m, gitRefreshRepo(m)
+		return m, tea.Batch(makeAlert(alerts.AlertTypeInfo, "pulled"), gitRefreshRepo(m))
 
 	case gitFetchResultMsg:
 		if len(msg.Err) != 0 {
 			logger.Warn(msg.Err)
-			return m, nil
+			return m, makeAlert(alerts.MsgTypeError, "fetch failed: "+msg.Err)
 		}
-
 		rs := m.reposTable.GetCurrentRepoState()
 		if rs == nil {
 			return m, nil
 		}
-
 		index := getRepoIndex(m.reposBeingUpdated, rs.ID)
 		if index != -1 {
 			m.reposBeingUpdated = deleteRepo(m.reposBeingUpdated, index)
 		}
-
-		return m, gitRefreshRepo(m)
+		return m, tea.Batch(makeAlert(alerts.AlertTypeInfo, "fetched"), gitRefreshRepo(m))
 
 	case gitRefreshRepoResultMsg:
 		m.reposTable.UpdateRepoState(msg.index, msg.newRepoState)
@@ -295,24 +313,12 @@ func defaultUpdate(m Model, msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case createRepoResultMsg:
-		alertType := alerts.AlertTypeInfo
-		message := "Repo créé (" + msg.label + ")"
 		if msg.err != nil {
-			alertType = alerts.MsgTypeError
-			message = msg.err.Error()
+			return m, makeAlert(alerts.MsgTypeError, msg.err.Error())
 		}
-		addAlert := func() tea.Msg {
-			return alerts.AddAlertMsg{Msg: alerts.Alert{
-				Type:    alertType,
-				Message: message,
-			}}
-		}
-		if msg.err == nil {
-			m.loading = true
-			request := generateReport{configs: m.configs}
-			return m, tea.Batch(addAlert, request.Cmd())
-		}
-		return m, addAlert
+		m.loading = true
+		request := generateReport{configs: m.configs}
+		return m, tea.Batch(makeAlert(alerts.AlertTypeInfo, "Repo créé ("+msg.label+")"), request.Cmd())
 
 	case alerts.AddAlertMsg, alerts.TickMsg:
 		var cmd tea.Cmd

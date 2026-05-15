@@ -5,7 +5,9 @@ import (
 	"runtime"
 	"strings"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/mabd-dev/reposcan/internal/config"
+	"github.com/mabd-dev/reposcan/internal/render/tui/alerts"
 	"github.com/mabd-dev/reposcan/pkg/report"
 )
 
@@ -44,6 +46,12 @@ func (m *Model) applyViewMode() {
 	case ViewModeNonRepoDirs:
 		nonRepos := filterNonRepoFolders(m.fullReport.AllFolders)
 		m.reposTable.SetFolders(nonRepos, nil)
+	}
+}
+
+func makeAlert(t alerts.AlertType, message string) tea.Cmd {
+	return func() tea.Msg {
+		return alerts.AddAlertMsg{Msg: alerts.Alert{Type: t, Message: message}}
 	}
 }
 
