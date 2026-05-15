@@ -109,8 +109,14 @@ func (m *Model) keybindings() []common.Keybinding {
 	switch m.currentFocus() {
 	case FocusReposTable:
 		entry := m.reposTable.GetCurrentFolderEntry()
+		onBranchRow := m.reposTable.CurrentRowIsBranch()
 		result := make([]common.Keybinding, 0, len(reposTableKeybindings))
 		for _, kb := range reposTableKeybindings {
+			// Checkout only applies to branch (child) rows.
+			if kb.Key == "c" && !onBranchRow {
+				continue
+			}
+
 			if entry == nil || entry.IsRepo {
 				if kb.Key != "n" {
 					result = append(result, kb)

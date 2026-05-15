@@ -6,6 +6,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/mabd-dev/reposcan/internal/gitx"
 	"github.com/mabd-dev/reposcan/internal/theme"
 	"github.com/mabd-dev/reposcan/pkg/report"
 )
@@ -25,10 +26,13 @@ func New(
 		filterQuery:   "",
 		displayMode:   tableDisplayRepos,
 		favorites:     map[string]bool{},
+		expanded:      map[string]bool{},
+		branchCache:   map[string][]gitx.BranchStatus{},
 	}
 
 	cols := createColumns(width)
-	rows := createRows(model.report.RepoStates, map[string]bool{}, theme)
+	rows, refs := model.buildRepoRows()
+	model.rowRefs = refs
 
 	t := table.New(
 		table.WithColumns(cols),
@@ -137,13 +141,14 @@ func (m *Model) filterRepos(query string) {
 
 	cursorPosition := m.tbl.Cursor()
 
-	rows := createRows(m.filteredRepos, m.favorites, m.theme)
+	rows, refs := m.buildRepoRows()
+	m.rowRefs = refs
 	if len(rows) == 0 {
 		rows = []table.Row{{"", "", ""}}
 	}
 	m.tbl.SetRows(rows)
 
-	if cursorPosition < len(m.filteredRepos) {
+	if cursorPosition < len(m.rowRefs) {
 		m.tbl.SetCursor(cursorPosition)
 	} else {
 		m.tbl.SetCursor(0)
@@ -179,15 +184,30 @@ func (m *Model) filterFolders(query string) {
 	}
 }
 
-func (m *Model) UpdateRepoState(index int, newState report.RepoState) {
-	m.filteredRepos[index] = newState
-
-	originalIndex := getRepoIndex(m.report.RepoStates, newState.ID)
-	if originalIndex != -1 {
-		m.report.RepoStates[originalIndex] = newState
+// UpdateRepoState replaces the state of the repo identified by newState.ID in
+// both the filtered and full repo lists, then rebuilds the table rows.
+func (m *Model) UpdateRepoState(_ int, newState report.RepoState) {
+	if fi := getRepoIndex(m.filteredRepos, newState.ID); fi != -1 {
+		m.filteredRepos[fi] = newState
+	}
+	if oi := getRepoIndex(m.report.RepoStates, newState.ID); oi != -1 {
+		m.report.RepoStates[oi] = newState
 	}
 
-	rows := createRows(m.filteredRepos, m.favorites, m.theme)
+	// A refreshed repo may have new branches or a different checked-out
+	// branch. Re-fetch immediately when expanded so the visible rows stay
+	// correct; otherwise just drop the stale cache.
+	if m.expanded[newState.ID] {
+		m.branchCache[newState.ID] = fetchBranches(newState.Path)
+	} else {
+		delete(m.branchCache, newState.ID)
+	}
+
+	rows, refs := m.buildRepoRows()
+	m.rowRefs = refs
+	if len(rows) == 0 {
+		rows = []table.Row{{"", "", ""}}
+	}
 	m.tbl.SetRows(rows)
 }
 
@@ -207,8 +227,8 @@ func (m *Model) SetCursorByRepoID(id string) bool {
 	if id == "" || m.displayMode != tableDisplayRepos {
 		return false
 	}
-	for i, rs := range m.filteredRepos {
-		if rs.ID == id {
+	for i, ref := range m.rowRefs {
+		if ref.branchIx == -1 && m.filteredRepos[ref.repoIdx].ID == id {
 			m.tbl.SetCursor(i)
 			return true
 		}
@@ -216,11 +236,92 @@ func (m *Model) SetCursorByRepoID(id string) bool {
 	return false
 }
 
+// ReposCount returns the number of selectable rows: folders in folder mode, or
+// visible rows (repo headers plus any expanded branch rows) in repos mode.
 func (rt *Model) ReposCount() int {
 	if rt.displayMode == tableDisplayFolders {
 		return len(rt.filteredFolders)
 	}
-	return len(rt.filteredRepos)
+	return len(rt.rowRefs)
+}
+
+// currentRef returns the rowRef under the cursor in repos mode.
+func (m *Model) currentRef() (rowRef, bool) {
+	if m.displayMode != tableDisplayRepos {
+		return rowRef{}, false
+	}
+	i := m.tbl.Cursor()
+	if i < 0 || i >= len(m.rowRefs) {
+		return rowRef{}, false
+	}
+	return m.rowRefs[i], true
+}
+
+// CurrentRowIsBranch reports whether the cursor is on a branch (child) row.
+func (m *Model) CurrentRowIsBranch() bool {
+	ref, ok := m.currentRef()
+	return ok && ref.branchIx >= 0
+}
+
+// GetCurrentBranchStatus returns the branch under the cursor when the cursor
+// is on a branch (child) row, or nil otherwise.
+func (m *Model) GetCurrentBranchStatus() *gitx.BranchStatus {
+	ref, ok := m.currentRef()
+	if !ok || ref.branchIx < 0 {
+		return nil
+	}
+	rs := m.filteredRepos[ref.repoIdx]
+	branches := m.branchCache[rs.ID]
+	if ref.branchIx >= len(branches) {
+		return nil
+	}
+	return &branches[ref.branchIx]
+}
+
+// ExpandCurrent expands the repo under the cursor, fetching its branch list
+// the first time. No-op in folder mode or when already expanded.
+func (m *Model) ExpandCurrent() {
+	m.setExpanded(true)
+}
+
+// CollapseCurrent collapses the repo under the cursor (or the parent repo when
+// the cursor sits on a branch row).
+func (m *Model) CollapseCurrent() {
+	m.setExpanded(false)
+}
+
+func (m *Model) setExpanded(expand bool) {
+	ref, ok := m.currentRef()
+	if !ok {
+		return
+	}
+	rs := m.filteredRepos[ref.repoIdx]
+	if m.expanded[rs.ID] == expand {
+		return
+	}
+
+	if expand {
+		if _, cached := m.branchCache[rs.ID]; !cached {
+			m.branchCache[rs.ID] = fetchBranches(rs.Path)
+		}
+	}
+	m.expanded[rs.ID] = expand
+
+	rows, refs := m.buildRepoRows()
+	m.rowRefs = refs
+	if len(rows) == 0 {
+		rows = []table.Row{{"", "", ""}}
+	}
+	m.tbl.SetRows(rows)
+	m.SetCursorByRepoID(rs.ID)
+}
+
+func fetchBranches(path string) []gitx.BranchStatus {
+	branches, err := gitx.GetBranchStatuses(path)
+	if err != nil {
+		return []gitx.BranchStatus{}
+	}
+	return branches
 }
 
 func (m *Model) GetCurrentRepoState() *report.RepoState {
@@ -230,11 +331,17 @@ func (m *Model) GetCurrentRepoState() *report.RepoState {
 	return m.GetRepoStateAt(m.Cursor())
 }
 
+// GetRepoStateAt returns the repo for the given visual row index. Branch rows
+// resolve to their parent repo.
 func (m *Model) GetRepoStateAt(index int) *report.RepoState {
-	if index < 0 || index >= len(m.filteredRepos) {
+	if index < 0 || index >= len(m.rowRefs) {
 		return nil
 	}
-	return &m.filteredRepos[index]
+	ri := m.rowRefs[index].repoIdx
+	if ri < 0 || ri >= len(m.filteredRepos) {
+		return nil
+	}
+	return &m.filteredRepos[ri]
 }
 
 // GetCurrentPath returns the filesystem path of the currently selected item,

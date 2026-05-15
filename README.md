@@ -116,6 +116,8 @@ reposcan
 | `↑` / `↓` or `j` / `k` | Navigate |
 | `←` / `→` or `h` / `l` | Switch view mode |
 | `Tab` | Toggle details panel: **file changes** ↔ **recent commits** |
+| `+` / `-` | Expand / collapse a repo to show its branches inline (ahead/behind per branch) |
+| `c` | Checkout the selected branch (only on expanded branch rows) |
 | `g` | Open the **Git actions** menu (quick save, push, pull, fetch, browser) |
 | `w` | Open remote URL in browser |
 | `o` | Open selected repo/folder in editor (VS Code by default, configurable) |
@@ -123,7 +125,7 @@ reposcan
 | `f` | Toggle favorite — pinned to top, persisted in config |
 | `n` | Create a new repo from selected folder (local or GitHub) |
 | `d` | Delete the selected local folder (typed `YES` confirmation) |
-| `c` | Copy path to clipboard |
+| `p` | Copy path to clipboard |
 | `r` | Refresh |
 | `/` | Search by repo/branch name |
 | `?` | Help popup |
@@ -135,18 +137,26 @@ Press `g` on a git repository to open a menu of git operations:
 
 ```
 ┌──────────────────────────────────────────┐
-│               Git actions                │
+│               Git                        │
 │                                          │
-│  [1]  Quick save — add . + commit + push  │
+│  Project  reposcan                       │
+│  Branch   main                           │
+│  ────────────────────────────────────    │
+│  Action:                                 │
+│                                          │
+│  [1]  Quick save                          │
 │  [2]  Push                                │
 │  [3]  Pull                                │
 │  [4]  Fetch                               │
-│  [5]  Open remote URL in browser          │
+│  [5]  Open remote                         │
 │                                          │
 │  [esc] Cancel                            │
 └──────────────────────────────────────────┘
 ```
 
+- The menu header shows the **project** and the **checked-out branch** the actions
+  will run on — these always target the repo's current branch, even if a different
+  branch row is highlighted.
 - **Quick save** runs `git add .`, commits a `wip` snapshot, then pushes.
 - The repo's state in the table refreshes once the operation finishes.
 
@@ -249,6 +259,7 @@ Each step overrides the one before it.
 - [x] Git worktree support
 - [x] 4-mode tab view (non-sync / all repos / all dirs / non-repo dirs)
 - [x] Details panel: file changes and recent commits
+- [x] Expandable repo tree — `+`/`-` to list each repo's branches inline
 - [x] Configurable editor (`o` key)
 - [x] Open remote in browser (`g` key)
 - [x] Favorites pinned to top (`f` key, persisted)
@@ -256,7 +267,6 @@ Each step overrides the one before it.
 - [x] Git actions menu — quick save, push, pull, fetch (`g` key)
 - [x] Delete folder from disk with typed confirmation (`d` key)
 - [x] Open in system file manager (`e` key)
-- [ ] Per-branch status view
 
 ---
 

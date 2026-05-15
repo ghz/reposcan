@@ -16,6 +16,16 @@ var reposTableKeybindings = []common.Keybinding{
 		ShortDesc:   "Details",
 	},
 	{
+		Key:         "+/-",
+		Description: "Expand / collapse a repo to show its branches",
+		ShortDesc:   "Branches",
+	},
+	{
+		Key:         "c",
+		Description: "Checkout the selected branch (branch rows only)",
+		ShortDesc:   "Checkout",
+	},
+	{
 		Key:         "g",
 		Description: "Open Git actions menu",
 		ShortDesc:   "Git",
@@ -51,7 +61,7 @@ var reposTableKeybindings = []common.Keybinding{
 		ShortDesc:   "Delete",
 	},
 	{
-		Key:         "c",
+		Key:         "p",
 		Description: "Copy repo path to clipboard",
 		ShortDesc:   "Copy Path",
 	},

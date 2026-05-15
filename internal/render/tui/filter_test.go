@@ -143,7 +143,7 @@ func TestReposTableFooterKeybindingsRouteThroughUpdate(t *testing.T) {
 		},
 		{
 			name:      "copy path",
-			key:       tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'c'}},
+			key:       tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'p'}},
 			wantFocus: FocusReposTable,
 			wantCmd:   true,
 		},

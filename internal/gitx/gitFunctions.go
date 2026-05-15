@@ -43,6 +43,11 @@ func GitFetch(path string) (string, error) {
 	return str, nil
 }
 
+// GitCheckout switches the repository at path to the given branch.
+func GitCheckout(path, branch string) (string, error) {
+	return RunGitCommand(path, "checkout", branch)
+}
+
 func GetGitRemotes(path string) (remotes []string, err error) {
 	str, err := RunGitCommand(path, "remote")
 	if err != nil {
@@ -65,6 +70,71 @@ func GetRepoBranch(path string) (branchName string, err error) {
 		return "-", err
 	}
 	return strings.TrimSpace(str), nil
+}
+
+// BranchStatus describes a single local branch and how far it has diverged
+// from its upstream tracking branch.
+type BranchStatus struct {
+	Name      string // local branch name
+	IsCurrent bool   // whether this branch is currently checked out
+	Upstream  string // upstream tracking branch (e.g. "origin/main"); empty if none
+	Ahead     int    // commits the local branch is ahead of its upstream
+	Behind    int    // commits the local branch is behind its upstream
+	Gone      bool   // upstream tracking branch no longer exists on the remote
+}
+
+var (
+	reTrackAhead  = regexp.MustCompile(`ahead (\d+)`)
+	reTrackBehind = regexp.MustCompile(`behind (\d+)`)
+)
+
+// GetBranchStatuses lists every local branch of the repository at repoPath
+// together with its tracking branch and ahead/behind divergence. A single
+// `git for-each-ref` call provides all the data, so the cost does not grow
+// with the number of branches.
+func GetBranchStatuses(repoPath string) ([]BranchStatus, error) {
+	// Fields, tab-separated: HEAD marker, branch name, upstream, track info.
+	const format = "%(HEAD)%09%(refname:short)%09%(upstream:short)%09%(upstream:track)"
+	out, err := RunGitCommand(repoPath, "for-each-ref", "--format="+format, "refs/heads/")
+	if err != nil {
+		return nil, err
+	}
+
+	branches := []BranchStatus{}
+	for _, line := range strings.Split(strings.TrimRight(out, "\n"), "\n") {
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
+		fields := strings.Split(line, "\t")
+		// upstream and track may be empty, so trailing fields can be missing.
+		for len(fields) < 4 {
+			fields = append(fields, "")
+		}
+
+		bs := BranchStatus{
+			IsCurrent: strings.TrimSpace(fields[0]) == "*",
+			Name:      fields[1],
+			Upstream:  fields[2],
+		}
+		track := fields[3]
+		if strings.Contains(track, "gone") {
+			bs.Gone = true
+		} else {
+			bs.Ahead = parseTrackCount(track, reTrackAhead)
+			bs.Behind = parseTrackCount(track, reTrackBehind)
+		}
+		branches = append(branches, bs)
+	}
+	return branches, nil
+}
+
+// parseTrackCount extracts a numeric count from a `%(upstream:track)` string
+// such as "[ahead 2, behind 1]" using the supplied regexp.
+func parseTrackCount(track string, re *regexp.Regexp) int {
+	if m := re.FindStringSubmatch(track); len(m) == 2 {
+		return atoiSafe(m[1])
+	}
+	return 0
 }
 
 // GetUncommitedFiles returns the list of uncommitted files (status porcelain)
