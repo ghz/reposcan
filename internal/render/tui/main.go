@@ -78,6 +78,7 @@ func Render(
 		height:              totalHeight,
 		reposFilter:         createRrepoFilter(),
 		createRepoNameInput: createRepoNameInputModel(),
+		deleteConfirmInput:  createDeleteConfirmInputModel(),
 		theme:               theme,
 		focusStack:          []FocusState{FocusReposTable},
 	}
@@ -105,5 +106,13 @@ func createRepoNameInputModel() textinput.Model {
 	ti.Placeholder = "nom-du-repo"
 	ti.CharLimit = 100
 	ti.Width = 36
+	return ti
+}
+
+func createDeleteConfirmInputModel() textinput.Model {
+	ti := textinput.New()
+	ti.Placeholder = "YES"
+	ti.CharLimit = 3
+	ti.Width = 12
 	return ti
 }

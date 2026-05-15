@@ -97,6 +97,103 @@ func TestReposFilterFiltersCurrentFolderView(t *testing.T) {
 	}
 }
 
+func TestReposTableFooterKeybindingsRouteThroughUpdate(t *testing.T) {
+	tests := []struct {
+		name      string
+		key       tea.KeyMsg
+		wantFocus FocusState
+		wantCmd   bool
+	}{
+		{
+			name:      "git menu",
+			key:       tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'g'}},
+			wantFocus: FocusGitMenuPopup,
+		},
+		{
+			name:      "open remote",
+			key:       tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'w'}},
+			wantFocus: FocusReposTable,
+			wantCmd:   true,
+		},
+		{
+			name:      "delete popup",
+			key:       tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'d'}},
+			wantFocus: FocusDeleteRepoPopup,
+		},
+		{
+			name:      "search",
+			key:       tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'/'}},
+			wantFocus: FocusReposFilter,
+		},
+		{
+			name:      "help",
+			key:       tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'?'}},
+			wantFocus: FocusHelpPopup,
+		},
+		{
+			name:      "refresh",
+			key:       tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'r'}},
+			wantFocus: FocusReposTable,
+			wantCmd:   true,
+		},
+		{
+			name:      "copy path",
+			key:       tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'c'}},
+			wantFocus: FocusReposTable,
+			wantCmd:   true,
+		},
+		{
+			name:      "quit",
+			key:       tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}},
+			wantFocus: FocusReposTable,
+			wantCmd:   true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := newTestModelWithRepos(t, []report.RepoState{{
+				ID:     "1",
+				Path:   t.TempDir(),
+				Repo:   "repo",
+				Branch: "main",
+			}})
+
+			updated, cmd := m.Update(tt.key)
+			got := updated.(Model)
+
+			if got.currentFocus() != tt.wantFocus {
+				t.Fatalf("focus = %v, want %v", got.currentFocus(), tt.wantFocus)
+			}
+			if (cmd != nil) != tt.wantCmd {
+				t.Fatalf("cmd nil = %v, want command presence %v", cmd == nil, tt.wantCmd)
+			}
+		})
+	}
+}
+
+func TestFocusStackDefaultsToReposTableWhenEmpty(t *testing.T) {
+	m := newTestModelWithRepos(t, []report.RepoState{{
+		ID:     "1",
+		Path:   t.TempDir(),
+		Repo:   "repo",
+		Branch: "main",
+	}})
+	m.focusStack = nil
+
+	updated, _ := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'/'}})
+	got := updated.(Model)
+	if got.currentFocus() != FocusReposFilter {
+		t.Fatalf("focus after / = %v, want %v", got.currentFocus(), FocusReposFilter)
+	}
+
+	updated, _ = got.Update(tea.KeyMsg{Type: tea.KeyEsc})
+	got = updated.(Model)
+	if got.currentFocus() != FocusReposTable {
+		t.Fatalf("focus after esc = %v, want %v", got.currentFocus(), FocusReposTable)
+	}
+}
+
 func newTestModelWithRepos(t *testing.T, repos []report.RepoState) Model {
 	t.Helper()
 
@@ -111,10 +208,11 @@ func newTestModelWithRepos(t *testing.T, repos []report.RepoState) Model {
 	scanReport := report.ScanReport{RepoStates: repos}
 
 	return Model{
-		reposTable:  repostable.New(th, scanReport, 100, 10),
-		alerts:      alerts.New(th),
-		reposFilter: createRrepoFilter(),
-		theme:       th,
-		focusStack:  []FocusState{FocusReposTable},
+		reposTable:         repostable.New(th, scanReport, 100, 10),
+		alerts:             alerts.New(th),
+		reposFilter:        createRrepoFilter(),
+		deleteConfirmInput: createDeleteConfirmInputModel(),
+		theme:              th,
+		focusStack:         []FocusState{FocusReposTable},
 	}
 }

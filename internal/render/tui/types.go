@@ -61,12 +61,13 @@ type Model struct {
 	fullReport        report.ScanReport
 
 	// Models
-	reposTable          repostable.Model
-	repoDetails         repodetails.Model
-	rtHeader            rth.Header
-	alerts              alerts.AlertModel
-	reposFilter         textinput.Model
-	createRepoNameInput textinput.Model
+	reposTable           repostable.Model
+	repoDetails          repodetails.Model
+	rtHeader             rth.Header
+	alerts               alerts.AlertModel
+	reposFilter          textinput.Model
+	createRepoNameInput  textinput.Model
+	deleteConfirmInput   textinput.Model
 	createRepoFolderPath string
 	createStep           createStep
 	createKind           createKind
@@ -106,6 +107,11 @@ func (k createKind) Label() string {
 type createRepoResultMsg struct {
 	label string // "local" | "GitHub private" | "GitHub public"
 	err   error
+}
+
+type deleteRepoResultMsg struct {
+	repoName string
+	err      error
 }
 
 func (m Model) IsReposFilterVisible() bool {

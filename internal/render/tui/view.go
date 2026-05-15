@@ -83,6 +83,17 @@ func (m Model) View() string {
 		)
 	}
 
+	if m.currentFocus() == FocusDeleteRepoPopup {
+		popup := m.generateDeleteRepoPopup()
+		view = overlay.PlaceOverlayWithPosition(
+			overlay.OverlayPositionCenter,
+			m.width, m.height,
+			popup, view,
+			true,
+			overlay.WithWhitespaceChars(" "),
+		)
+	}
+
 	return view
 }
 

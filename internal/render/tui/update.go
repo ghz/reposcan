@@ -1,6 +1,8 @@
 package tui
 
 import (
+	"errors"
+	"os"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -23,6 +25,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.updateCreateRepoPopup(msg)
 	case FocusGitMenuPopup:
 		return m.updateGitMenuPopup(msg)
+	case FocusDeleteRepoPopup:
+		return m.updateDeleteRepoPopup(msg)
 	}
 	return m, nil
 }
@@ -30,7 +34,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m Model) updateReposTable(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
+		switch keyString(msg) {
 		case "q", "esc", "ctrl+c":
 			return m, tea.Quit
 		case "g":
@@ -39,6 +43,12 @@ func (m Model) updateReposTable(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			m.pushFocus(FocusGitMenuPopup)
 			return m, nil
+		case "w":
+			rs := m.reposTable.GetCurrentRepoState()
+			if rs == nil {
+				return m, nil
+			}
+			return m, openRemoteForRepo(rs.Path)
 		case "right", "l":
 			m.viewMode = m.viewMode.Next()
 			m.applyViewMode()
@@ -84,17 +94,23 @@ func (m Model) updateReposTable(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.createStep = stepChooseKind
 			m.pushFocus(FocusCreateRepoPopup)
 			return m, nil
+		case "d":
+			if m.reposTable.GetCurrentPath() == "" {
+				return m, nil
+			}
+			m.deleteConfirmInput.SetValue("")
+			m.pushFocus(FocusDeleteRepoPopup)
+			return m, nil
 		case "tab":
 			m.repoDetails.ToggleSubMode(m.reposTable.GetCurrentRepoState())
 			return m, nil
 		case "c":
-			rs := m.reposTable.GetCurrentRepoState()
-			if rs == nil {
+			path := m.reposTable.GetCurrentPath()
+			if path == "" {
 				return m, nil
 			}
 
-			path := shellEscapePath(rs.Path)
-			clipboard.Write(clipboard.FmtText, []byte(path))
+			clipboard.Write(clipboard.FmtText, []byte(shellEscapePath(path)))
 			return m, makeAlert(alerts.AlertTypeInfo, "Path copied to clipboard")
 		case "r":
 			m.loading = true
@@ -136,7 +152,7 @@ func (m Model) updateGitMenuPopup(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
-	switch keyMsg.String() {
+	switch keyString(keyMsg) {
 	case "q", "esc", "ctrl+c":
 		m.popFocus(false)
 		return m, nil
@@ -154,21 +170,55 @@ func (m Model) updateGitMenuPopup(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, gitFetch(m)
 	case "5":
 		m.popFocus(false)
-		url, err := gitx.GetRemoteWebURL(rs.Path)
-		if err != nil || url == "" {
-			return m, makeAlert(alerts.MsgTypeError, "remote URL unavailable")
-		}
-		openBrowser(url)
-		return m, nil
+		return m, openRemoteForRepo(rs.Path)
 	}
 
 	return m, nil
 }
 
+func openRemoteForRepo(repoPath string) tea.Cmd {
+	url, err := gitx.GetRemoteWebURL(repoPath)
+	if err != nil || url == "" {
+		return makeAlert(alerts.MsgTypeError, "remote URL unavailable")
+	}
+	openBrowser(url)
+	return nil
+}
+
+func (m Model) updateDeleteRepoPopup(msg tea.Msg) (tea.Model, tea.Cmd) {
+	keyMsg, isKey := msg.(tea.KeyMsg)
+	if !isKey {
+		var cmd tea.Cmd
+		m.deleteConfirmInput, cmd = m.deleteConfirmInput.Update(msg)
+		return m, cmd
+	}
+
+	switch keyString(keyMsg) {
+	case "esc", "ctrl+c":
+		m.popFocus(true)
+		return m, nil
+	case "enter":
+		targetName, path, _ := m.deleteTarget()
+		if strings.TrimSpace(path) == "" {
+			m.popFocus(true)
+			return m, nil
+		}
+		if strings.TrimSpace(m.deleteConfirmInput.Value()) != "YES" {
+			return m, makeAlert(alerts.MsgTypeError, "Type YES to confirm deletion")
+		}
+		m.popFocus(true)
+		return m, deleteRepoCmd(targetName, path)
+	}
+
+	var cmd tea.Cmd
+	m.deleteConfirmInput, cmd = m.deleteConfirmInput.Update(msg)
+	return m, cmd
+}
+
 func (m Model) updateReposFilter(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
+		switch keyString(msg) {
 		case "esc", "ctrl+c":
 			m.popFocus(true)
 
@@ -203,7 +253,7 @@ func (m *Model) acceptReposFilter() {
 func (m Model) keybindingPopup(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
+		switch keyString(msg) {
 		case "q", "esc":
 			m.popFocus(true)
 			return m, nil
@@ -228,7 +278,7 @@ func (m Model) updateCreateRepoPopup(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	if m.createStep == stepChooseKind {
-		switch keyMsg.String() {
+		switch keyString(keyMsg) {
 		case "esc", "ctrl+c":
 			m.popFocus(true)
 		case "1":
@@ -245,7 +295,7 @@ func (m Model) updateCreateRepoPopup(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	// stepEnterName
-	switch keyMsg.String() {
+	switch keyString(keyMsg) {
 	case "ctrl+c":
 		m.popFocus(true)
 		return m, nil
@@ -274,6 +324,13 @@ func (m Model) updateCreateRepoPopup(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	m.createRepoNameInput, cmd = m.createRepoNameInput.Update(msg)
 	return m, cmd
+}
+
+func keyString(msg tea.KeyMsg) string {
+	if msg.Type == tea.KeyRunes && len(msg.Runes) == 1 {
+		return string(msg.Runes[0])
+	}
+	return msg.String()
 }
 
 type quickSaveResultMsg struct {
@@ -330,6 +387,16 @@ func createGitHubRepoCmd(name, path string, private bool) tea.Cmd {
 			return createRepoResultMsg{label: label, err: err}
 		}
 		return createRepoResultMsg{label: label}
+	}
+}
+
+func deleteRepoCmd(targetName, path string) tea.Cmd {
+	return func() tea.Msg {
+		if strings.TrimSpace(path) == "" {
+			return deleteRepoResultMsg{repoName: targetName, err: errors.New("empty folder path")}
+		}
+		err := os.RemoveAll(path)
+		return deleteRepoResultMsg{repoName: targetName, err: err}
 	}
 }
 
@@ -403,6 +470,18 @@ func defaultUpdate(m Model, msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.loading = true
 		request := generateReport{configs: m.configs}
 		return m, tea.Batch(makeAlert(alerts.AlertTypeInfo, "Repo created ("+msg.label+")"), request.Cmd())
+
+	case deleteRepoResultMsg:
+		if msg.err != nil {
+			return m, makeAlert(alerts.MsgTypeError, "delete failed: "+msg.err.Error())
+		}
+		m.loading = true
+		request := generateReport{configs: m.configs}
+		label := msg.repoName
+		if label == "" {
+			label = "folder"
+		}
+		return m, tea.Batch(makeAlert(alerts.AlertTypeInfo, "Folder deleted: "+label), request.Cmd())
 
 	case alerts.AddAlertMsg, alerts.TickMsg:
 		var cmd tea.Cmd

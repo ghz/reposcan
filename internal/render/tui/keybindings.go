@@ -21,6 +21,11 @@ var reposTableKeybindings = []common.Keybinding{
 		ShortDesc:   "Git",
 	},
 	{
+		Key:         "w",
+		Description: "Open remote URL in browser",
+		ShortDesc:   "Remote",
+	},
+	{
 		Key:         "o",
 		Description: "Open in editor (VS Code by default, configurable)",
 		ShortDesc:   "Open",
@@ -39,6 +44,11 @@ var reposTableKeybindings = []common.Keybinding{
 		Key:         "n",
 		Description: "New repo from selected folder (local or GitHub)",
 		ShortDesc:   "New repo",
+	},
+	{
+		Key:         "d",
+		Description: "Delete selected local folder after typing YES",
+		ShortDesc:   "Delete",
 	},
 	{
 		Key:         "c",
@@ -150,5 +160,18 @@ var createRepoNameKeybindings = []common.Keybinding{
 		Key:         "esc",
 		Description: "Back to type selection",
 		ShortDesc:   "Back",
+	},
+}
+
+var deleteRepoKeybindings = []common.Keybinding{
+	{
+		Key:         "YES + enter",
+		Description: "Permanently delete the repository folder",
+		ShortDesc:   "Confirm",
+	},
+	{
+		Key:         "esc",
+		Description: "Cancel",
+		ShortDesc:   "Cancel",
 	},
 }

@@ -12,6 +12,7 @@ const (
 	FocusHelpPopup
 	FocusCreateRepoPopup
 	FocusGitMenuPopup
+	FocusDeleteRepoPopup
 )
 
 func (m Model) currentFocus() FocusState {
@@ -22,12 +23,14 @@ func (m Model) currentFocus() FocusState {
 }
 
 func (m *Model) pushFocus(state FocusState) {
+	m.ensureFocusStack()
 	m.blurCurrentModel()
 	m.focusStack = append(m.focusStack, state)
 	m.focusCurrentModel()
 }
 
 func (m *Model) popFocus(reset bool) Model {
+	m.ensureFocusStack()
 	m.blurCurrentModel()
 	if reset {
 		m.resetCurrentModel()
@@ -45,6 +48,12 @@ func (m *Model) popFocus(reset bool) Model {
 	return *m
 }
 
+func (m *Model) ensureFocusStack() {
+	if len(m.focusStack) == 0 {
+		m.focusStack = []FocusState{FocusReposTable}
+	}
+}
+
 func (m *Model) focusCurrentModel() {
 	switch m.currentFocus() {
 	case FocusReposTable:
@@ -53,6 +62,8 @@ func (m *Model) focusCurrentModel() {
 		m.reposFilter.Focus()
 	case FocusCreateRepoPopup:
 		m.createRepoNameInput.Focus()
+	case FocusDeleteRepoPopup:
+		m.deleteConfirmInput.Focus()
 	case FocusGitMenuPopup:
 		break
 	case FocusHelpPopup:
@@ -68,6 +79,8 @@ func (m *Model) blurCurrentModel() {
 		m.reposFilter.Blur()
 	case FocusCreateRepoPopup:
 		m.createRepoNameInput.Blur()
+	case FocusDeleteRepoPopup:
+		m.deleteConfirmInput.Blur()
 	case FocusGitMenuPopup:
 		break
 	case FocusHelpPopup:
@@ -83,6 +96,8 @@ func (m *Model) resetCurrentModel() {
 		m.reposFilter.SetValue("")
 	case FocusCreateRepoPopup:
 		m.createRepoNameInput.SetValue("")
+	case FocusDeleteRepoPopup:
+		m.deleteConfirmInput.SetValue("")
 	case FocusGitMenuPopup:
 		break
 	case FocusHelpPopup:
@@ -119,6 +134,8 @@ func (m *Model) keybindings() []common.Keybinding {
 		return createRepoKindKeybindings
 	case FocusGitMenuPopup:
 		return gitMenuKeybindings
+	case FocusDeleteRepoPopup:
+		return deleteRepoKeybindings
 	}
 	return []common.Keybinding{}
 }
