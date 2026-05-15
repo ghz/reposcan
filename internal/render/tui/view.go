@@ -16,8 +16,12 @@ func (m Model) View() string {
 
 	footer := m.getFooterView()
 
-	// Calculate heights
-	footerHeight := lipgloss.Height(footer)
+	// Reserve a fixed footer height based on the longest possible keybinding
+	// line so the body never shifts when contextual keybindings (like "n")
+	// appear or disappear.
+	footerHeight := m.stableFooterHeight(footer)
+	footer = lipgloss.NewStyle().Width(m.width).Height(footerHeight).Render(footer)
+
 	bodyHeight := m.height - footerHeight
 
 	reposTableHeight := bodyHeight * sizeReposTableHeightPercent / 100
@@ -81,21 +85,13 @@ func (m *Model) getFooterView() string {
 
 func (m *Model) generateKeybindingsFooterView() string {
 	keybindings := m.keybindings()
-
-	addKeybinding := false
-	switch m.currentFocus() {
-	case FocusReposTable:
-		addKeybinding = true
+	if m.currentFocus() == FocusReposTable {
+		keybindings = append(keybindings, common.Keybinding{Key: "?", ShortDesc: "Help"})
 	}
+	return m.renderKeybindingsLine(keybindings)
+}
 
-	if addKeybinding {
-		keybindings = append(keybindings, common.Keybinding{
-			Key:         "?",
-			Description: "Help",
-			ShortDesc:   "Help",
-		})
-	}
-
+func (m *Model) renderKeybindingsLine(keybindings []common.Keybinding) string {
 	kbStyle := m.theme.Styles.Base.Foreground(m.theme.Colors.Foreground)
 	mutedStyle := m.theme.Styles.Muted
 
@@ -104,13 +100,40 @@ func (m *Model) generateKeybindingsFooterView() string {
 		sb.WriteString(mutedStyle.Render(kb.ShortDesc))
 		sb.WriteString(mutedStyle.Render(": "))
 		sb.WriteString(kbStyle.Render(kb.Key))
-
 		if i < len(keybindings)-1 {
 			sb.WriteString(mutedStyle.Render(" | "))
 		}
 	}
-
 	return m.theme.Styles.Muted.Render(sb.String())
+}
+
+// stableFooterHeight returns the height to reserve for the footer. It measures
+// the line height *after* wrapping to the terminal width, and uses the longest
+// possible keybinding line (with every contextual binding present) so the body
+// never shifts when contextual keybindings appear or disappear.
+func (m *Model) stableFooterHeight(actualFooter string) int {
+	width := m.width
+	if width <= 0 {
+		width = 80
+	}
+	measure := func(s string) int {
+		return lipgloss.Height(lipgloss.NewStyle().Width(width).Render(s))
+	}
+
+	actual := measure(actualFooter)
+	if m.IsReposFilterVisible() || m.currentFocus() != FocusReposTable {
+		return actual
+	}
+
+	fullKbs := make([]common.Keybinding, len(reposTableKeybindings)+1)
+	copy(fullKbs, reposTableKeybindings)
+	fullKbs[len(reposTableKeybindings)] = common.Keybinding{Key: "?", ShortDesc: "Help"}
+	ref := measure(m.renderKeybindingsLine(fullKbs))
+
+	if ref > actual {
+		return ref
+	}
+	return actual
 }
 
 // renderAlerts take list of alerts, calculate each alert y position and render it (it it's visible). Overlay each alert on top of main [view] (bg view)

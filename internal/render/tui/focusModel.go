@@ -86,7 +86,17 @@ func (m *Model) resetCurrentModel() {
 func (m *Model) keybindings() []common.Keybinding {
 	switch m.currentFocus() {
 	case FocusReposTable:
-		return reposTableKeybindings
+		entry := m.reposTable.GetCurrentFolderEntry()
+		if entry != nil && !entry.IsRepo {
+			return reposTableKeybindings
+		}
+		result := make([]common.Keybinding, 0, len(reposTableKeybindings))
+		for _, kb := range reposTableKeybindings {
+			if kb.Key != "n" {
+				result = append(result, kb)
+			}
+		}
+		return result
 	case FocusReposFilter:
 		return reposTableFilterKeybindings
 	case FocusHelpPopup:
