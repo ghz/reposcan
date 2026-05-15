@@ -20,6 +20,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.updateReposFilter(msg)
 	case FocusHelpPopup:
 		return m.keybindingPopup(msg)
+	case FocusCreateRepoPopup:
+		return m.updateCreateRepoPopup(msg)
 	}
 	return m, nil
 }
@@ -68,6 +70,15 @@ func (m Model) updateReposTable(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 			m.toggleFavorite(rs.Path)
+			return m, nil
+		case "n":
+			entry := m.reposTable.GetCurrentFolderEntry()
+			if entry == nil || entry.IsRepo {
+				return m, nil
+			}
+			m.createRepoFolderPath = entry.Path
+			m.createRepoNameInput.SetValue(entry.Name)
+			m.pushFocus(FocusCreateRepoPopup)
 			return m, nil
 		case "d":
 			m.repoDetails.ToggleSubMode(m.reposTable.GetCurrentRepoState())
@@ -163,6 +174,72 @@ func (m Model) keybindingPopup(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+func (m Model) updateCreateRepoPopup(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "esc", "ctrl+c":
+			m.popFocus(true)
+			return m, nil
+		case "l", "p", "u":
+			name := strings.TrimSpace(m.createRepoNameInput.Value())
+			if name == "" {
+				return m, nil
+			}
+			path := m.createRepoFolderPath
+			m.popFocus(true)
+			switch msg.String() {
+			case "l":
+				return m, createLocalRepoCmd(path)
+			case "p":
+				return m, createGitHubRepoCmd(name, path, true)
+			case "u":
+				return m, createGitHubRepoCmd(name, path, false)
+			}
+		}
+	}
+	var cmd tea.Cmd
+	m.createRepoNameInput, cmd = m.createRepoNameInput.Update(msg)
+	return m, cmd
+}
+
+func createLocalRepoCmd(path string) tea.Cmd {
+	return func() tea.Msg {
+		if err := gitx.InitRepo(path); err != nil {
+			return createRepoResultMsg{label: "local", err: err}
+		}
+		if err := gitx.AddAll(path); err != nil {
+			return createRepoResultMsg{label: "local", err: err}
+		}
+		if err := gitx.CommitInitial(path); err != nil {
+			return createRepoResultMsg{label: "local", err: err}
+		}
+		return createRepoResultMsg{label: "local"}
+	}
+}
+
+func createGitHubRepoCmd(name, path string, private bool) tea.Cmd {
+	label := "GitHub public"
+	if private {
+		label = "GitHub privé"
+	}
+	return func() tea.Msg {
+		if err := gitx.InitRepo(path); err != nil {
+			return createRepoResultMsg{label: label, err: err}
+		}
+		if err := gitx.AddAll(path); err != nil {
+			return createRepoResultMsg{label: label, err: err}
+		}
+		if err := gitx.CommitInitial(path); err != nil {
+			return createRepoResultMsg{label: label, err: err}
+		}
+		if err := gitx.GitHubCreateRepo(name, path, private); err != nil {
+			return createRepoResultMsg{label: label, err: err}
+		}
+		return createRepoResultMsg{label: label}
+	}
+}
+
 func defaultUpdate(m Model, msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -216,6 +293,26 @@ func defaultUpdate(m Model, msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.fullReport = msg.report
 		m.applyViewMode()
 		return m, nil
+
+	case createRepoResultMsg:
+		alertType := alerts.AlertTypeInfo
+		message := "Repo créé (" + msg.label + ")"
+		if msg.err != nil {
+			alertType = alerts.MsgTypeError
+			message = msg.err.Error()
+		}
+		addAlert := func() tea.Msg {
+			return alerts.AddAlertMsg{Msg: alerts.Alert{
+				Type:    alertType,
+				Message: message,
+			}}
+		}
+		if msg.err == nil {
+			m.loading = true
+			request := generateReport{configs: m.configs}
+			return m, tea.Batch(addAlert, request.Cmd())
+		}
+		return m, addAlert
 
 	case alerts.AddAlertMsg, alerts.TickMsg:
 		var cmd tea.Cmd

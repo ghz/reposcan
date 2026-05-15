@@ -57,13 +57,20 @@ type Model struct {
 	fullReport        report.ScanReport
 
 	// Models
-	reposTable  repostable.Model
-	repoDetails repodetails.Model
-	rtHeader    rth.Header
-	alerts      alerts.AlertModel
-	reposFilter textinput.Model
+	reposTable          repostable.Model
+	repoDetails         repodetails.Model
+	rtHeader            rth.Header
+	alerts              alerts.AlertModel
+	reposFilter         textinput.Model
+	createRepoNameInput textinput.Model
+	createRepoFolderPath string
 
 	focusStack []FocusState
+}
+
+type createRepoResultMsg struct {
+	label string // "local" | "GitHub private" | "GitHub public"
+	err   error
 }
 
 func (m Model) IsReposFilterVisible() bool {

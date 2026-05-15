@@ -36,6 +36,11 @@ var reposTableKeybindings = []common.Keybinding{
 		ShortDesc:   "Favorite",
 	},
 	{
+		Key:         "n",
+		Description: "New repo from selected folder (local or GitHub)",
+		ShortDesc:   "New repo",
+	},
+	{
 		Key:         "c",
 		Description: "Copy repo path to clipboard",
 		ShortDesc:   "Copy Path",
@@ -76,5 +81,28 @@ var helpPopupKeybindings = []common.Keybinding{
 		Key:         "q/<esc>",
 		Description: "Close Popup",
 		ShortDesc:   "Close",
+	},
+}
+
+var createRepoPopupKeybindings = []common.Keybinding{
+	{
+		Key:         "l",
+		Description: "Local uniquement",
+		ShortDesc:   "Local",
+	},
+	{
+		Key:         "p",
+		Description: "GitHub — privé",
+		ShortDesc:   "GH privé",
+	},
+	{
+		Key:         "u",
+		Description: "GitHub — public",
+		ShortDesc:   "GH public",
+	},
+	{
+		Key:         "esc",
+		Description: "Annuler",
+		ShortDesc:   "Annuler",
 	},
 }

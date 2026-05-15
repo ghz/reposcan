@@ -194,6 +194,45 @@ func parseRepoName(remote string) (string, bool) {
 	return "", false
 }
 
+// InitRepo initialises a new Git repository at path.
+func InitRepo(path string) error {
+	_, err := RunGitCommand(path, "init")
+	return err
+}
+
+// AddAll stages all files in the repository at path.
+func AddAll(path string) error {
+	_, err := RunGitCommand(path, "add", ".")
+	return err
+}
+
+// CommitInitial creates the first commit in the repository at path.
+func CommitInitial(path string) error {
+	_, err := RunGitCommand(path, "commit", "-m", "initial commit")
+	return err
+}
+
+// GitHubCreateRepo uses the gh CLI to create a GitHub repo named repoName,
+// linked to the local directory at path, and pushes the initial commit.
+// Requires the gh CLI to be installed and authenticated.
+func GitHubCreateRepo(repoName, path string, private bool) error {
+	visibility := "--public"
+	if private {
+		visibility = "--private"
+	}
+	cmd := exec.Command("gh", "repo", "create", repoName, visibility, "--source="+path, "--push")
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+	if err := cmd.Run(); err != nil {
+		msg := stderr.String()
+		if msg == "" {
+			msg = err.Error()
+		}
+		return errors.New(msg)
+	}
+	return nil
+}
+
 // GetRemoteWebURL returns a browser-friendly HTTPS URL for the origin remote
 // of the repository at repoPath. SSH URLs (git@host:org/repo.git) are
 // converted to HTTPS automatically.

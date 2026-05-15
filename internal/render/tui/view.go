@@ -45,13 +45,23 @@ func (m Model) View() string {
 
 	if m.currentFocus() == FocusHelpPopup {
 		helpView := generateHelpPopup(m.theme, reposTableKeybindings)
-
 		view = overlay.PlaceOverlayWithPosition(
 			overlay.OverlayPositionCenter,
 			m.width, m.height,
 			helpView, view,
 			true,
-			overlay.WithWhitespaceChars(" "), // fill empty space
+			overlay.WithWhitespaceChars(" "),
+		)
+	}
+
+	if m.currentFocus() == FocusCreateRepoPopup {
+		popup := m.generateCreateRepoPopup()
+		view = overlay.PlaceOverlayWithPosition(
+			overlay.OverlayPositionCenter,
+			m.width, m.height,
+			popup, view,
+			true,
+			overlay.WithWhitespaceChars(" "),
 		)
 	}
 

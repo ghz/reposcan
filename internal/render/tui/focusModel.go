@@ -10,6 +10,7 @@ const (
 	FocusReposTable FocusState = iota
 	FocusReposFilter
 	FocusHelpPopup
+	FocusCreateRepoPopup
 )
 
 func (m Model) currentFocus() FocusState {
@@ -49,6 +50,8 @@ func (m *Model) focusCurrentModel() {
 		m.reposTable.Focus()
 	case FocusReposFilter:
 		m.reposFilter.Focus()
+	case FocusCreateRepoPopup:
+		m.createRepoNameInput.Focus()
 	case FocusHelpPopup:
 		break
 	}
@@ -60,6 +63,8 @@ func (m *Model) blurCurrentModel() {
 		m.reposTable.Blur()
 	case FocusReposFilter:
 		m.reposFilter.Blur()
+	case FocusCreateRepoPopup:
+		m.createRepoNameInput.Blur()
 	case FocusHelpPopup:
 		break
 	}
@@ -71,6 +76,8 @@ func (m *Model) resetCurrentModel() {
 		m.reposTable.Filter("")
 	case FocusReposFilter:
 		m.reposFilter.SetValue("")
+	case FocusCreateRepoPopup:
+		m.createRepoNameInput.SetValue("")
 	case FocusHelpPopup:
 		break
 	}
@@ -84,6 +91,8 @@ func (m *Model) keybindings() []common.Keybinding {
 		return reposTableFilterKeybindings
 	case FocusHelpPopup:
 		return helpPopupKeybindings
+	case FocusCreateRepoPopup:
+		return createRepoPopupKeybindings
 	}
 	return []common.Keybinding{}
 }

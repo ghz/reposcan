@@ -68,18 +68,19 @@ func Render(
 	repoDetails := repodetails.New(nil, theme)
 
 	m := Model{
-		configs:     configs,
-		fullReport:  fullReport,
-		viewMode:    ViewModeDirty,
-		reposTable:  reposTable,
-		repoDetails: repoDetails,
-		rtHeader:    reposTableHeader,
-		alerts:      alerts.New(theme),
-		width:       totalWidth,
-		height:      totalHeight,
-		reposFilter: createRrepoFilter(),
-		theme:       theme,
-		focusStack:  []FocusState{FocusReposTable},
+		configs:             configs,
+		fullReport:          fullReport,
+		viewMode:            ViewModeDirty,
+		reposTable:          reposTable,
+		repoDetails:         repoDetails,
+		rtHeader:            reposTableHeader,
+		alerts:              alerts.New(theme),
+		width:               totalWidth,
+		height:              totalHeight,
+		reposFilter:         createRrepoFilter(),
+		createRepoNameInput: createRepoNameInputModel(),
+		theme:               theme,
+		focusStack:          []FocusState{FocusReposTable},
 	}
 
 	err = clipboard.Init()
@@ -95,8 +96,15 @@ func Render(
 func createRrepoFilter() textinput.Model {
 	ti := textinput.New()
 	ti.Placeholder = "Filter by repo/branch name"
-	//ti.Focus()
 	ti.CharLimit = 156
 	ti.Width = 100
+	return ti
+}
+
+func createRepoNameInputModel() textinput.Model {
+	ti := textinput.New()
+	ti.Placeholder = "nom-du-repo"
+	ti.CharLimit = 100
+	ti.Width = 36
 	return ti
 }
