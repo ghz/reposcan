@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/bubbles/table"
-	"github.com/charmbracelet/lipgloss"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/mabd-dev/reposcan/internal/theme"
 	"github.com/mabd-dev/reposcan/pkg/report"
 )
@@ -35,7 +35,7 @@ func createRows(repoStates []report.RepoState, favorites map[string]bool, theme 
 		state := getStateColumnStr(rs, theme)
 		name := rs.Repo
 		if favorites[rs.Path] {
-			name = lipgloss.NewStyle().Foreground(theme.Colors.Warning).Render("★") + " " + name
+			name = "★ " + name
 		}
 		rows = append(rows, table.Row{
 			name,
