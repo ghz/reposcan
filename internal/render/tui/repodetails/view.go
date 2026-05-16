@@ -64,12 +64,29 @@ func (m *Model) viewTabs() string {
 	)
 }
 
+// viewFiles renders the `git status --porcelain` lines. The leading two-letter
+// status code is colored like git's own short status: the index (staged)
+// column green, the worktree (unstaged) column red, and untracked `??` red.
 func (m *Model) viewFiles() string {
 	content := m.theme.Styles.Base.Foreground(m.theme.Colors.Foreground)
+	staged := m.theme.Styles.Base.Foreground(m.theme.Colors.Success)
+	unstaged := m.theme.Styles.Base.Foreground(m.theme.Colors.Error)
 
 	body := make([]string, 0, len(m.repoState.UncommitedFiles))
 	for _, f := range m.repoState.UncommitedFiles {
-		body = append(body, "  "+content.Render(f))
+		line := "  "
+		if len(f) >= 3 {
+			code, rest := f[:2], f[2:]
+			if code == "??" {
+				line += unstaged.Render(code)
+			} else {
+				line += staged.Render(code[:1]) + unstaged.Render(code[1:])
+			}
+			line += content.Render(rest)
+		} else {
+			line += content.Render(f)
+		}
+		body = append(body, line)
 	}
 	return m.render(body, "    no changes")
 }
