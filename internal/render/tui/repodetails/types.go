@@ -9,10 +9,11 @@ type DetailsSubMode int
 
 const (
 	DetailsSubModeFiles   DetailsSubMode = 0
-	DetailsSubModeCommits DetailsSubMode = 1
-	DetailsSubModeReadme  DetailsSubMode = 2
+	DetailsSubModeDiff    DetailsSubMode = 1
+	DetailsSubModeCommits DetailsSubMode = 2
+	DetailsSubModeReadme  DetailsSubMode = 3
 
-	detailsSubModeCount = 3
+	detailsSubModeCount = 4
 )
 
 type Model struct {
@@ -21,6 +22,7 @@ type Model struct {
 	subMode DetailsSubMode
 	commits []string
 	readme  []string
+	diff    []string
 
 	// scrollOffset is the index of the first body line shown in the panel.
 	// It is reset to 0 whenever the panel's content changes (tab switch or a

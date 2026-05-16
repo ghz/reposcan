@@ -17,7 +17,7 @@ var reposTableKeybindings = []common.Keybinding{
 	},
 	{
 		Key:         "←/→",
-		Description: "Cycle details: file changes / recent commits / README (or h/l)",
+		Description: "Cycle details: file changes / diff / recent commits / README (or h/l)",
 		ShortDesc:   "Switch Details",
 	},
 	{

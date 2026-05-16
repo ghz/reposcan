@@ -116,7 +116,7 @@ reposcan
 |---|---|
 | `Tab` / `Shift+Tab` | Switch view mode |
 | `↑` / `↓` or `j` / `k` | Navigate |
-| `←` / `→` or `h` / `l` | Switch details tab: **file changes** / **recent commits** / **README** |
+| `←` / `→` or `h` / `l` | Switch details tab: **file changes** / **diff** / **recent commits** / **README** |
 | `+` / `-` | Expand / collapse a repo to show its branches inline (ahead/behind per branch) |
 | `c` | Checkout the selected branch (only on expanded branch rows) |
 | `g` | Open the **Git actions** menu (quick save, commit, push, pull, fetch, browser) |
@@ -269,7 +269,7 @@ Each step overrides the one before it.
 - [x] Windows support
 - [x] Git worktree support
 - [x] 4-mode tab view (non-sync / all repos / all dirs / non-repo dirs)
-- [x] Details panel: file changes, recent commits and README tabs
+- [x] Details panel: file changes, diff, recent commits and README tabs
 - [x] Expandable repo tree — `+`/`-` to list each repo's branches inline
 - [x] Configurable editor (`o` key)
 - [x] Configurable terminal (`t` key)

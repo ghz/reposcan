@@ -441,6 +441,25 @@ func GetRecentCommits(repoPath string, limit int) ([]string, error) {
 	return removeEmptyStrings(lines), nil
 }
 
+// GetDiff returns the working-tree diff against HEAD for the repository at
+// repoPath, one output line per slice element with ANSI color codes embedded.
+// Returns an empty slice when there are no changes. Repos with no commits
+// (no HEAD) fall back to the index diff.
+func GetDiff(repoPath string) ([]string, error) {
+	output, err := RunGitCommand(repoPath, "-c", "color.ui=always", "diff", "HEAD")
+	if err != nil {
+		output, err = RunGitCommand(repoPath, "-c", "color.ui=always", "diff")
+		if err != nil {
+			return nil, err
+		}
+	}
+	trimmed := strings.TrimRight(output, "\n")
+	if trimmed == "" {
+		return []string{}, nil
+	}
+	return strings.Split(trimmed, "\n"), nil
+}
+
 // RunGitCommand executes a git command in dir and returns its stdout as a string.
 // Non-zero exit codes include git output in the returned error.
 func RunGitCommand(dir string, args ...string) (string, error) {

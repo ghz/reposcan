@@ -13,6 +13,8 @@ func (m *Model) View() string {
 	}
 
 	switch m.subMode {
+	case DetailsSubModeDiff:
+		return m.viewDiff()
 	case DetailsSubModeCommits:
 		return m.viewCommits()
 	case DetailsSubModeReadme:
@@ -55,6 +57,7 @@ func (m *Model) viewTabs() string {
 	return lipgloss.JoinHorizontal(
 		lipgloss.Left,
 		tab(DetailsSubModeFiles, "File changes"),
+		tab(DetailsSubModeDiff, "Diff"),
 		tab(DetailsSubModeCommits, "Recent commits"),
 		tab(DetailsSubModeReadme, "README"),
 		hint,
@@ -67,6 +70,17 @@ func (m *Model) viewFiles() string {
 	body := make([]string, 0, len(m.repoState.UncommitedFiles))
 	for _, f := range m.repoState.UncommitedFiles {
 		body = append(body, "  "+content.Render(f))
+	}
+	return m.render(body, "    no changes")
+}
+
+// viewDiff renders the colored `git diff` output. Lines already carry git's
+// own ANSI color codes, so they are emitted as-is (only indented) rather than
+// re-wrapped in a lipgloss style, which would clobber the embedded colors.
+func (m *Model) viewDiff() string {
+	body := make([]string, 0, len(m.diff))
+	for _, l := range m.diff {
+		body = append(body, "  "+l)
 	}
 	return m.render(body, "    no changes")
 }

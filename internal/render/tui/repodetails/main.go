@@ -63,6 +63,8 @@ func (m *Model) visibleRows() int {
 // contentLength returns the number of body lines for the active sub-mode.
 func (m *Model) contentLength() int {
 	switch m.subMode {
+	case DetailsSubModeDiff:
+		return len(m.diff)
 	case DetailsSubModeCommits:
 		return len(m.commits)
 	case DetailsSubModeReadme:
@@ -117,12 +119,31 @@ func (m *Model) ReloadForRepo(rs *report.RepoState) {
 func (m *Model) loadForSubMode(rs *report.RepoState) {
 	m.commits = nil
 	m.readme = nil
+	m.diff = nil
 	switch m.subMode {
+	case DetailsSubModeDiff:
+		m.fetchDiffForRepo(rs)
 	case DetailsSubModeCommits:
 		m.fetchCommitsForRepo(rs)
 	case DetailsSubModeReadme:
 		m.fetchReadmeForRepo(rs)
 	}
+}
+
+// fetchDiffForRepo loads the colored working-tree diff for rs. It runs git
+// only when the Diff tab is active, so opening the panel on another tab does
+// not pay the cost.
+func (m *Model) fetchDiffForRepo(rs *report.RepoState) {
+	if rs == nil {
+		m.diff = nil
+		return
+	}
+	diff, err := gitx.GetDiff(rs.Path)
+	if err != nil {
+		m.diff = []string{}
+		return
+	}
+	m.diff = diff
 }
 
 func (m *Model) fetchCommitsForRepo(rs *report.RepoState) {
