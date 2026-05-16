@@ -118,7 +118,7 @@ reposcan
 | `←` / `→` or `h` / `l` | Switch details tab: **file changes** / **recent commits** / **README** |
 | `+` / `-` | Expand / collapse a repo to show its branches inline (ahead/behind per branch) |
 | `c` | Checkout the selected branch (only on expanded branch rows) |
-| `g` | Open the **Git actions** menu (quick save, push, pull, fetch, browser) |
+| `g` | Open the **Git actions** menu (quick save, commit, push, pull, fetch, browser) |
 | `w` | Open remote URL in browser |
 | `o` | Open selected repo/folder in editor (VS Code by default, configurable) |
 | `e` | Open selected repo/folder in the system file manager |
@@ -145,10 +145,11 @@ Press `g` on a git repository to open a menu of git operations:
 │  Action:                                 │
 │                                          │
 │  [1]  Quick save                          │
-│  [2]  Push                                │
-│  [3]  Pull                                │
-│  [4]  Fetch                               │
-│  [5]  Open remote                         │
+│  [2]  Commit…                             │
+│  [3]  Push                                │
+│  [4]  Pull                                │
+│  [5]  Fetch                               │
+│  [6]  Open remote                         │
 │                                          │
 │  [esc] Cancel                            │
 └──────────────────────────────────────────┘
@@ -157,7 +158,11 @@ Press `g` on a git repository to open a menu of git operations:
 - The menu header shows the **project** and the **checked-out branch** the actions
   will run on — these always target the repo's current branch, even if a different
   branch row is highlighted.
-- **Quick save** runs `git add .`, commits a `wip` snapshot, then pushes.
+- **Quick save** runs `git add .`, commits a `wip` snapshot, then pushes — one
+  keystroke, no prompt.
+- **Commit…** runs `git add .`, then opens a popup to type a commit message and
+  commits with it. It does **not** push, leaving the commit for you to review or
+  amend. An empty message defaults to `wip`.
 - The repo's state in the table refreshes once the operation finishes.
 
 ### Creating a repo from a folder (`n`)
@@ -264,7 +269,7 @@ Each step overrides the one before it.
 - [x] Open remote in browser (`g` key)
 - [x] Favorites pinned to top (`f` key, persisted)
 - [x] Create repo from folder — local or GitHub (`n` key)
-- [x] Git actions menu — quick save, push, pull, fetch (`g` key)
+- [x] Git actions menu — quick save, commit, push, pull, fetch (`g` key)
 - [x] Delete folder from disk with typed confirmation (`d` key)
 - [x] Open in system file manager (`e` key)
 

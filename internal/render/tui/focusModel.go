@@ -12,6 +12,7 @@ const (
 	FocusHelpPopup
 	FocusCreateRepoPopup
 	FocusGitMenuPopup
+	FocusCommitPopup
 	FocusDeleteRepoPopup
 )
 
@@ -62,6 +63,8 @@ func (m *Model) focusCurrentModel() {
 		m.reposFilter.Focus()
 	case FocusCreateRepoPopup:
 		m.createRepoNameInput.Focus()
+	case FocusCommitPopup:
+		m.commitMessageInput.Focus()
 	case FocusDeleteRepoPopup:
 		m.deleteConfirmInput.Focus()
 	case FocusGitMenuPopup:
@@ -79,6 +82,8 @@ func (m *Model) blurCurrentModel() {
 		m.reposFilter.Blur()
 	case FocusCreateRepoPopup:
 		m.createRepoNameInput.Blur()
+	case FocusCommitPopup:
+		m.commitMessageInput.Blur()
 	case FocusDeleteRepoPopup:
 		m.deleteConfirmInput.Blur()
 	case FocusGitMenuPopup:
@@ -96,6 +101,8 @@ func (m *Model) resetCurrentModel() {
 		m.reposFilter.SetValue("")
 	case FocusCreateRepoPopup:
 		m.createRepoNameInput.SetValue("")
+	case FocusCommitPopup:
+		m.commitMessageInput.SetValue("")
 	case FocusDeleteRepoPopup:
 		m.deleteConfirmInput.SetValue("")
 	case FocusGitMenuPopup:
@@ -140,6 +147,8 @@ func (m *Model) keybindings() []common.Keybinding {
 		return createRepoKindKeybindings
 	case FocusGitMenuPopup:
 		return gitMenuKeybindings
+	case FocusCommitPopup:
+		return commitPopupKeybindings
 	case FocusDeleteRepoPopup:
 		return deleteRepoKeybindings
 	}

@@ -78,6 +78,7 @@ func Render(
 		height:              totalHeight,
 		reposFilter:         createRrepoFilter(),
 		createRepoNameInput: createRepoNameInputModel(),
+		commitMessageInput:  createCommitMessageInputModel(),
 		deleteConfirmInput:  createDeleteConfirmInputModel(),
 		theme:               theme,
 		focusStack:          []FocusState{FocusReposTable},
@@ -106,6 +107,14 @@ func createRepoNameInputModel() textinput.Model {
 	ti.Placeholder = "nom-du-repo"
 	ti.CharLimit = 100
 	ti.Width = 36
+	return ti
+}
+
+func createCommitMessageInputModel() textinput.Model {
+	ti := textinput.New()
+	ti.Placeholder = "wip"
+	ti.CharLimit = 200
+	ti.Width = 44
 	return ti
 }
 

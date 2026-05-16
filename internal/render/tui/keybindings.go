@@ -117,21 +117,26 @@ var gitMenuKeybindings = []common.Keybinding{
 	},
 	{
 		Key:         "2",
+		Description: "Commit: git add . + commit with a typed message",
+		ShortDesc:   "Commit",
+	},
+	{
+		Key:         "3",
 		Description: "Git push",
 		ShortDesc:   "Push",
 	},
 	{
-		Key:         "3",
+		Key:         "4",
 		Description: "Git pull",
 		ShortDesc:   "Pull",
 	},
 	{
-		Key:         "4",
+		Key:         "5",
 		Description: "Git fetch",
 		ShortDesc:   "Fetch",
 	},
 	{
-		Key:         "5",
+		Key:         "6",
 		Description: "Open remote URL in browser",
 		ShortDesc:   "Browser",
 	},
@@ -139,6 +144,19 @@ var gitMenuKeybindings = []common.Keybinding{
 		Key:         "esc",
 		Description: "Cancel",
 		ShortDesc:   "Cancel",
+	},
+}
+
+var commitPopupKeybindings = []common.Keybinding{
+	{
+		Key:         "enter",
+		Description: "Commit staged changes (empty message defaults to wip)",
+		ShortDesc:   "Commit",
+	},
+	{
+		Key:         "esc",
+		Description: "Back to Git menu",
+		ShortDesc:   "Back",
 	},
 }
 

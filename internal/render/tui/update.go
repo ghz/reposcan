@@ -54,6 +54,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.updateCreateRepoPopup(msg)
 	case FocusGitMenuPopup:
 		return m.updateGitMenuPopup(msg)
+	case FocusCommitPopup:
+		return m.updateCommitPopup(msg)
 	case FocusDeleteRepoPopup:
 		return m.updateDeleteRepoPopup(msg)
 	}
@@ -206,20 +208,64 @@ func (m Model) updateGitMenuPopup(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.popFocus(false)
 		return m, quickSaveCmd(rs.Path)
 	case "2":
-		m.popFocus(false)
-		return m, gitPush(m)
+		m.pushFocus(FocusCommitPopup)
+		return m, nil
 	case "3":
 		m.popFocus(false)
-		return m, gitPull(m)
+		return m, gitPush(m)
 	case "4":
 		m.popFocus(false)
-		return m, gitFetch(m)
+		return m, gitPull(m)
 	case "5":
+		m.popFocus(false)
+		return m, gitFetch(m)
+	case "6":
 		m.popFocus(false)
 		return m, openRemoteForRepo(rs.Path)
 	}
 
 	return m, nil
+}
+
+// updateCommitPopup handles the "Commit…" popup opened from the Git menu. It
+// stages all changes and commits with the typed message; an empty message
+// defaults to "wip". Unlike Quick save it does not push.
+func (m Model) updateCommitPopup(msg tea.Msg) (tea.Model, tea.Cmd) {
+	keyMsg, isKey := msg.(tea.KeyMsg)
+	if !isKey {
+		var cmd tea.Cmd
+		m.commitMessageInput, cmd = m.commitMessageInput.Update(msg)
+		return m, cmd
+	}
+
+	switch keyString(keyMsg) {
+	case "ctrl+c":
+		m.popFocus(true)  // close commit popup
+		m.popFocus(false) // close git menu
+		return m, nil
+	case "esc":
+		m.popFocus(true) // back to git menu
+		return m, nil
+	case "enter":
+		rs := m.reposTable.GetCurrentRepoState()
+		if rs == nil {
+			m.popFocus(true)
+			m.popFocus(false)
+			return m, nil
+		}
+		message := strings.TrimSpace(m.commitMessageInput.Value())
+		if message == "" {
+			message = "wip"
+		}
+		path := rs.Path
+		m.popFocus(true)  // close commit popup
+		m.popFocus(false) // close git menu
+		return m, commitCmd(path, message)
+	}
+
+	var cmd tea.Cmd
+	m.commitMessageInput, cmd = m.commitMessageInput.Update(msg)
+	return m, cmd
 }
 
 func openRemoteForRepo(repoPath string) tea.Cmd {
@@ -385,6 +431,18 @@ func quickSaveCmd(path string) tea.Cmd {
 	}
 }
 
+type commitResultMsg struct {
+	result gitx.CommitResult
+	err    error
+}
+
+func commitCmd(path, message string) tea.Cmd {
+	return func() tea.Msg {
+		result, err := gitx.CommitWithMessage(path, message)
+		return commitResultMsg{result: result, err: err}
+	}
+}
+
 type gitCheckoutResultMsg struct {
 	branch string
 	err    error
@@ -475,6 +533,16 @@ func defaultUpdate(m Model, msg tea.Msg) (tea.Model, tea.Cmd) {
 		label := "pushed"
 		if msg.result.Committed {
 			label = "committed (wip) + pushed"
+		}
+		return m, tea.Batch(makeAlert(alerts.AlertTypeInfo, label), gitRefreshRepo(m))
+
+	case commitResultMsg:
+		if msg.err != nil {
+			return m, makeAlert(alerts.MsgTypeError, msg.err.Error())
+		}
+		label := "nothing to commit"
+		if msg.result.Committed {
+			label = "committed"
 		}
 		return m, tea.Batch(makeAlert(alerts.AlertTypeInfo, label), gitRefreshRepo(m))
 

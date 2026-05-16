@@ -67,6 +67,7 @@ type Model struct {
 	alerts               alerts.AlertModel
 	reposFilter          textinput.Model
 	createRepoNameInput  textinput.Model
+	commitMessageInput   textinput.Model
 	deleteConfirmInput   textinput.Model
 	createRepoFolderPath string
 	createStep           createStep

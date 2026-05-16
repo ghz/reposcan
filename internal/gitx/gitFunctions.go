@@ -344,6 +344,33 @@ func QuickSave(path string) (QuickSaveResult, error) {
 	return r, nil
 }
 
+// CommitResult describes what CommitWithMessage did.
+type CommitResult struct {
+	Committed bool
+}
+
+// CommitWithMessage runs git add . → git commit -m <message>.
+// Unlike QuickSave it does not push: a deliberate commit is left for the user
+// to review or amend before pushing. If there is nothing to commit the commit
+// step is skipped.
+func CommitWithMessage(path, message string) (CommitResult, error) {
+	var r CommitResult
+
+	if err := AddAll(path); err != nil {
+		return r, err
+	}
+
+	if err := GitCommit(path, message); err != nil {
+		if !strings.Contains(err.Error(), "nothing to commit") {
+			return r, err
+		}
+	} else {
+		r.Committed = true
+	}
+
+	return r, nil
+}
+
 // GitHubCreateRepo uses the gh CLI to create a GitHub repo named repoName,
 // linked to the local directory at path, and optionally pushes the initial commit.
 // Requires the gh CLI to be installed and authenticated.

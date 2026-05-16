@@ -27,10 +27,11 @@ func (m *Model) generateGitMenuPopup() string {
 
 	actions := lipgloss.JoinVertical(lipgloss.Left,
 		lipgloss.JoinHorizontal(lipgloss.Left, keyStyle.Render("[1]"), textStyle.Render("  Quick save")),
-		lipgloss.JoinHorizontal(lipgloss.Left, keyStyle.Render("[2]"), textStyle.Render("  Push")),
-		lipgloss.JoinHorizontal(lipgloss.Left, keyStyle.Render("[3]"), textStyle.Render("  Pull")),
-		lipgloss.JoinHorizontal(lipgloss.Left, keyStyle.Render("[4]"), textStyle.Render("  Fetch")),
-		lipgloss.JoinHorizontal(lipgloss.Left, keyStyle.Render("[5]"), textStyle.Render("  Open remote")),
+		lipgloss.JoinHorizontal(lipgloss.Left, keyStyle.Render("[2]"), textStyle.Render("  Commit…")),
+		lipgloss.JoinHorizontal(lipgloss.Left, keyStyle.Render("[3]"), textStyle.Render("  Push")),
+		lipgloss.JoinHorizontal(lipgloss.Left, keyStyle.Render("[4]"), textStyle.Render("  Pull")),
+		lipgloss.JoinHorizontal(lipgloss.Left, keyStyle.Render("[5]"), textStyle.Render("  Fetch")),
+		lipgloss.JoinHorizontal(lipgloss.Left, keyStyle.Render("[6]"), textStyle.Render("  Open remote")),
 	)
 
 	content := lipgloss.JoinVertical(lipgloss.Left,
