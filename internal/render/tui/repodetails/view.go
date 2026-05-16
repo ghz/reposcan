@@ -40,8 +40,8 @@ func (m *Model) join(lines []string) string {
 // bar, with the active tab highlighted and a hint on the same line.
 func (m *Model) viewTabs() string {
 	active := m.theme.Styles.Base.
-		Foreground(m.theme.Colors.Accent).
-		Background(m.theme.Colors.TableAltRow).
+		Foreground(m.theme.Colors.Background).
+		Background(lipgloss.Color("15")).
 		Bold(true).
 		Padding(0, 1)
 	inactive := m.theme.Styles.Muted.Padding(0, 1)
