@@ -2,7 +2,6 @@ package repodetails
 
 import (
 	"fmt"
-	"strconv"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/muesli/reflow/truncate"
@@ -63,101 +62,75 @@ func (m *Model) viewTabs() string {
 }
 
 func (m *Model) viewFiles() string {
-	style := m.theme.Styles.Base.Foreground(m.theme.Colors.Info)
 	content := m.theme.Styles.Base.Foreground(m.theme.Colors.Foreground)
 
-	lines := []string{
-		fmt.Sprintf("%s %s", style.Render("Path:"), m.repoState.Path),
-		m.viewTabs(),
+	body := make([]string, 0, len(m.repoState.UncommitedFiles))
+	for _, f := range m.repoState.UncommitedFiles {
+		body = append(body, "  "+content.Render(f))
 	}
-
-	if len(m.repoState.UncommitedFiles) > 0 {
-		files := m.repoState.UncommitedFiles
-
-		maxToShow := m.height - len(lines) - 1
-		trimmed := len(files) > maxToShow
-
-		if trimmed {
-			files = files[:maxToShow]
-		}
-
-		for _, f := range files {
-			lines = append(lines, "  "+content.Render(f))
-		}
-
-		if trimmed {
-			more := len(m.repoState.UncommitedFiles) - maxToShow
-			lines = append(lines, m.theme.Styles.Muted.Render("  ... (+"+strconv.Itoa(more)+" more)"))
-		}
-	} else {
-		lines = append(lines, m.theme.Styles.Muted.Render("    no changes"))
-	}
-
-	return m.join(lines)
+	return m.render(body, "    no changes")
 }
 
 func (m *Model) viewCommits() string {
-	style := m.theme.Styles.Base.Foreground(m.theme.Colors.Info)
 	content := m.theme.Styles.Base.Foreground(m.theme.Colors.Foreground)
 
-	lines := []string{
-		fmt.Sprintf("%s %s", style.Render("Path:"), m.repoState.Path),
-		m.viewTabs(),
+	body := make([]string, 0, len(m.commits))
+	for _, c := range m.commits {
+		body = append(body, "  "+content.Render(c))
 	}
-
-	if len(m.commits) == 0 {
-		lines = append(lines, m.theme.Styles.Muted.Render("    no commits"))
-		return m.join(lines)
-	}
-
-	commits := m.commits
-	maxToShow := m.height - len(lines) - 1
-	trimmed := len(commits) > maxToShow
-	if trimmed {
-		commits = commits[:maxToShow]
-	}
-
-	for _, c := range commits {
-		lines = append(lines, "  "+content.Render(c))
-	}
-
-	if trimmed {
-		more := len(m.commits) - maxToShow
-		lines = append(lines, m.theme.Styles.Muted.Render("  ... (+"+strconv.Itoa(more)+" more)"))
-	}
-
-	return m.join(lines)
+	return m.render(body, "    no commits")
 }
 
 func (m *Model) viewReadme() string {
-	style := m.theme.Styles.Base.Foreground(m.theme.Colors.Info)
-	contentStyle := m.theme.Styles.Base.Foreground(m.theme.Colors.Foreground)
+	content := m.theme.Styles.Base.Foreground(m.theme.Colors.Foreground)
 
-	lines := []string{
-		fmt.Sprintf("%s %s", style.Render("Path:"), m.repoState.Path),
+	body := make([]string, 0, len(m.readme))
+	for _, l := range m.readme {
+		body = append(body, "  "+content.Render(l))
+	}
+	return m.render(body, "    no README found")
+}
+
+// render assembles the details panel: the "Path:" line and tab bar, then the
+// slice of body lines visible at the current scroll offset. When the body is
+// taller than the panel, the last row shows how many lines are hidden above
+// and below and how to scroll.
+func (m *Model) render(body []string, emptyMsg string) string {
+	infoStyle := m.theme.Styles.Base.Foreground(m.theme.Colors.Info)
+	header := []string{
+		fmt.Sprintf("%s %s", infoStyle.Render("Path:"), m.repoState.Path),
 		m.viewTabs(),
 	}
 
-	if len(m.readme) == 0 {
-		lines = append(lines, m.theme.Styles.Muted.Render("    no README found"))
-		return m.join(lines)
+	if len(body) == 0 {
+		return m.join(append(header, m.theme.Styles.Muted.Render(emptyMsg)))
 	}
 
-	content := m.readme
-	maxToShow := m.height - len(lines) - 1
-	trimmed := len(content) > maxToShow
-	if trimmed {
-		content = content[:maxToShow]
+	avail := m.height - len(header) - 1
+	if avail < 1 {
+		avail = 1
 	}
 
-	for _, l := range content {
-		lines = append(lines, "  "+contentStyle.Render(l))
+	// Everything fits: no scrolling, no hint line.
+	if len(body) <= avail {
+		return m.join(append(header, body...))
 	}
 
-	if trimmed {
-		more := len(m.readme) - maxToShow
-		lines = append(lines, m.theme.Styles.Muted.Render("  ... (+"+strconv.Itoa(more)+" more)"))
+	// Clamp the offset; the panel may have grown since the last scroll.
+	maxOffset := len(body) - avail
+	if m.scrollOffset > maxOffset {
+		m.scrollOffset = maxOffset
+	}
+	if m.scrollOffset < 0 {
+		m.scrollOffset = 0
 	}
 
+	window := body[m.scrollOffset : m.scrollOffset+avail]
+	above := m.scrollOffset
+	below := len(body) - (m.scrollOffset + avail)
+	hint := fmt.Sprintf("  ↑ %d above · ↓ %d below — PgUp/PgDn", above, below)
+
+	lines := append(header, window...)
+	lines = append(lines, m.theme.Styles.Muted.Render(hint))
 	return m.join(lines)
 }

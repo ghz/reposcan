@@ -22,6 +22,11 @@ type Model struct {
 	commits []string
 	readme  []string
 
+	// scrollOffset is the index of the first body line shown in the panel.
+	// It is reset to 0 whenever the panel's content changes (tab switch or a
+	// different repo selected).
+	scrollOffset int
+
 	repoState *report.RepoState
 	theme     theme.Theme
 }

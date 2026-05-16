@@ -21,6 +21,11 @@ var reposTableKeybindings = []common.Keybinding{
 		ShortDesc:   "Switch Details",
 	},
 	{
+		Key:         "PgUp/PgDn",
+		Description: "Scroll the details panel up and down (resets when switching tab)",
+		ShortDesc:   "Scroll Details",
+	},
+	{
 		Key:         "+/-",
 		Description: "Expand / collapse a repo to show its branches",
 		ShortDesc:   "Branches",
@@ -49,6 +54,11 @@ var reposTableKeybindings = []common.Keybinding{
 		Key:         "e",
 		Description: "Open in system file manager",
 		ShortDesc:   "Explorer",
+	},
+	{
+		Key:         "t",
+		Description: "Open in a terminal (configurable)",
+		ShortDesc:   "Terminal",
 	},
 	{
 		Key:         "f",

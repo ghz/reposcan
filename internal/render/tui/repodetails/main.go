@@ -46,7 +46,64 @@ func (m *Model) CycleSubMode(rs *report.RepoState, forward bool) {
 	} else {
 		m.subMode = (m.subMode - 1 + detailsSubModeCount) % detailsSubModeCount
 	}
+	m.scrollOffset = 0
 	m.loadForSubMode(rs)
+}
+
+// visibleRows is the number of body lines the details panel can show at once,
+// excluding the "Path:" and tab-bar header lines and the scroll-hint line.
+func (m *Model) visibleRows() int {
+	rows := m.height - 3
+	if rows < 1 {
+		rows = 1
+	}
+	return rows
+}
+
+// contentLength returns the number of body lines for the active sub-mode.
+func (m *Model) contentLength() int {
+	switch m.subMode {
+	case DetailsSubModeCommits:
+		return len(m.commits)
+	case DetailsSubModeReadme:
+		return len(m.readme)
+	default:
+		if m.repoState == nil {
+			return 0
+		}
+		return len(m.repoState.UncommitedFiles)
+	}
+}
+
+// maxScroll is the largest valid scroll offset for the active sub-mode.
+func (m *Model) maxScroll() int {
+	max := m.contentLength() - m.visibleRows()
+	if max < 0 {
+		return 0
+	}
+	return max
+}
+
+// ScrollPageDown moves the details viewport down by one page.
+func (m *Model) ScrollPageDown() {
+	m.scrollOffset += m.visibleRows()
+	if m.scrollOffset > m.maxScroll() {
+		m.scrollOffset = m.maxScroll()
+	}
+}
+
+// ScrollPageUp moves the details viewport up by one page.
+func (m *Model) ScrollPageUp() {
+	m.scrollOffset -= m.visibleRows()
+	if m.scrollOffset < 0 {
+		m.scrollOffset = 0
+	}
+}
+
+// ResetScroll returns the details viewport to the top. It is called whenever
+// the panel's content changes (tab switch or a different repo selected).
+func (m *Model) ResetScroll() {
+	m.scrollOffset = 0
 }
 
 // ReloadForRepo reloads the data backing the current sub-mode (called when the

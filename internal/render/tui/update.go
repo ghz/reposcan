@@ -86,6 +86,12 @@ func (m Model) updateReposTable(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "left", "h":
 			m.repoDetails.CycleSubMode(m.reposTable.GetCurrentRepoState(), false)
 			return m, nil
+		case "pgup":
+			m.repoDetails.ScrollPageUp()
+			return m, nil
+		case "pgdown":
+			m.repoDetails.ScrollPageDown()
+			return m, nil
 		case "o":
 			path := m.reposTable.GetCurrentPath()
 			if path != "" {
@@ -104,6 +110,15 @@ func (m Model) updateReposTable(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			if err := openFileManager(path); err != nil {
 				return m, makeAlert(alerts.MsgTypeError, "open failed: "+err.Error())
+			}
+			return m, nil
+		case "t":
+			path := m.reposTable.GetCurrentPath()
+			if path == "" {
+				return m, nil
+			}
+			if err := openTerminal(m.configs.Terminal, path); err != nil {
+				return m, makeAlert(alerts.MsgTypeError, "open terminal failed: "+err.Error())
 			}
 			return m, nil
 		case "f":
@@ -182,8 +197,11 @@ func (m Model) updateReposTable(msg tea.Msg) (tea.Model, tea.Cmd) {
 	prevCursor := m.reposTable.Cursor()
 	var cmd tea.Cmd
 	m.reposTable, cmd = m.reposTable.Update(msg)
-	if m.reposTable.Cursor() != prevCursor && m.repoDetails.SubMode() != repodetails.DetailsSubModeFiles {
-		m.repoDetails.ReloadForRepo(m.reposTable.GetCurrentRepoState())
+	if m.reposTable.Cursor() != prevCursor {
+		m.repoDetails.ResetScroll()
+		if m.repoDetails.SubMode() != repodetails.DetailsSubModeFiles {
+			m.repoDetails.ReloadForRepo(m.reposTable.GetCurrentRepoState())
+		}
 	}
 	return m, cmd
 }
