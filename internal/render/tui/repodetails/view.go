@@ -64,6 +64,7 @@ func (m *Model) viewTabs() string {
 
 func (m *Model) viewFiles() string {
 	style := m.theme.Styles.Base.Foreground(m.theme.Colors.Info)
+	content := m.theme.Styles.Base.Foreground(m.theme.Colors.Foreground)
 
 	lines := []string{
 		fmt.Sprintf("%s %s", style.Render("Path:"), m.repoState.Path),
@@ -81,7 +82,7 @@ func (m *Model) viewFiles() string {
 		}
 
 		for _, f := range files {
-			lines = append(lines, "  "+m.theme.Styles.Muted.Render(f))
+			lines = append(lines, "  "+content.Render(f))
 		}
 
 		if trimmed {
@@ -97,6 +98,7 @@ func (m *Model) viewFiles() string {
 
 func (m *Model) viewCommits() string {
 	style := m.theme.Styles.Base.Foreground(m.theme.Colors.Info)
+	content := m.theme.Styles.Base.Foreground(m.theme.Colors.Foreground)
 
 	lines := []string{
 		fmt.Sprintf("%s %s", style.Render("Path:"), m.repoState.Path),
@@ -116,7 +118,7 @@ func (m *Model) viewCommits() string {
 	}
 
 	for _, c := range commits {
-		lines = append(lines, "  "+m.theme.Styles.Muted.Render(c))
+		lines = append(lines, "  "+content.Render(c))
 	}
 
 	if trimmed {
@@ -129,6 +131,7 @@ func (m *Model) viewCommits() string {
 
 func (m *Model) viewReadme() string {
 	style := m.theme.Styles.Base.Foreground(m.theme.Colors.Info)
+	contentStyle := m.theme.Styles.Base.Foreground(m.theme.Colors.Foreground)
 
 	lines := []string{
 		fmt.Sprintf("%s %s", style.Render("Path:"), m.repoState.Path),
@@ -148,7 +151,7 @@ func (m *Model) viewReadme() string {
 	}
 
 	for _, l := range content {
-		lines = append(lines, "  "+m.theme.Styles.Muted.Render(l))
+		lines = append(lines, "  "+contentStyle.Render(l))
 	}
 
 	if trimmed {
