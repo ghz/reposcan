@@ -14,6 +14,10 @@ type Config struct {
 	// Editor is the CLI command used to open repos/folders (e.g. "code", "zed", "idea").
 	Editor string `toml:"editor,omitempty"`
 
+	// Terminal is the command used to open a repo/folder in a terminal.
+	// When empty, a platform default is used (Windows Terminal/cmd, Terminal.app, x-terminal-emulator).
+	Terminal string `toml:"terminal,omitempty"`
+
 	// Favorites is a list of repo paths pinned to the top of the list.
 	Favorites []string `toml:"favorites,omitempty"`
 

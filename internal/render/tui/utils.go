@@ -119,6 +119,35 @@ func commandForFileManager(goos string, path string) *exec.Cmd {
 	}
 }
 
+// openTerminal launches a terminal emulator with its working directory set to
+// path. When terminal is non-empty it is used as the command (the path is
+// passed as its sole argument); otherwise a platform default is used.
+func openTerminal(terminal string, path string) error {
+	cmd := commandForTerminal(runtime.GOOS, terminal, path)
+	err := cmd.Start()
+	if err != nil && strings.TrimSpace(terminal) == "" && runtime.GOOS == "windows" {
+		// Windows Terminal (wt) may not be installed; fall back to cmd.
+		fallback := exec.Command("cmd", "/c", "start", "cmd", "/k", "cd", "/d", path)
+		return fallback.Start()
+	}
+	return err
+}
+
+func commandForTerminal(goos string, terminal string, path string) *exec.Cmd {
+	if strings.TrimSpace(terminal) != "" {
+		return exec.Command(terminal, path)
+	}
+	switch goos {
+	case "windows":
+		// Windows Terminal opens directly at the given directory.
+		return exec.Command("wt", "-d", path)
+	case "darwin":
+		return exec.Command("open", "-a", "Terminal", path)
+	default:
+		return exec.Command("x-terminal-emulator", "--working-directory="+path)
+	}
+}
+
 // toggleFavorite adds or removes repoPath from the favorites list, then
 // persists the updated config and refreshes the table.
 func (m *Model) toggleFavorite(repoPath string) {

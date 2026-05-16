@@ -84,6 +84,7 @@ reposcan -r ~/Code -r ~/work
 -f, --filter string             Repository filter: all|dirty|uncommitted|unpushed|unpulled (default "dirty")
 -o, --output string             Output format: json|interactive|none (default "interactive")
     --editor string             CLI command used to open repos/folders (e.g. code, zed, idea)
+    --terminal string           Command used to open repos/folders in a terminal
     --json-output-path string   Write scan report JSON files to this directory (optional)
 -w, --max-workers int           Number of concurrent git checks (default 8)
     --debug                     Enable debug logging
@@ -122,6 +123,7 @@ reposcan
 | `w` | Open remote URL in browser |
 | `o` | Open selected repo/folder in editor (VS Code by default, configurable) |
 | `e` | Open selected repo/folder in the system file manager |
+| `t` | Open selected repo/folder in a terminal (configurable) |
 | `f` | Toggle favorite — pinned to top, persisted in config |
 | `n` | Create a new repo from selected folder (local or GitHub) |
 | `d` | Delete the selected local folder (typed `YES` confirmation) |
@@ -221,6 +223,10 @@ only = "dirty"
 # Editor command for the `o` keybinding
 editor = "code"
 
+# Terminal command for the `t` keybinding
+# Leave unset for a platform default (Windows Terminal/cmd, Terminal.app, x-terminal-emulator)
+terminal = ""
+
 # Pinned repos (managed by `f` in the TUI)
 favorites = [
   "/home/user/Code/myproject",
@@ -266,12 +272,14 @@ Each step overrides the one before it.
 - [x] Details panel: file changes, recent commits and README tabs
 - [x] Expandable repo tree — `+`/`-` to list each repo's branches inline
 - [x] Configurable editor (`o` key)
+- [x] Configurable terminal (`t` key)
 - [x] Open remote in browser (`g` key)
 - [x] Favorites pinned to top (`f` key, persisted)
 - [x] Create repo from folder — local or GitHub (`n` key)
 - [x] Git actions menu — quick save, commit, push, pull, fetch (`g` key)
 - [x] Delete folder from disk with typed confirmation (`d` key)
 - [x] Open in system file manager (`e` key)
+- [x] Open in a terminal (`t` key)
 
 ---
 

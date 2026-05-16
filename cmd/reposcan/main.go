@@ -40,6 +40,7 @@ func init() {
 	RootCmd.PersistentFlags().IntP("max-workers", "w", configs.MaxWorkers, "Number of concurrent git checks")
 	RootCmd.PersistentFlags().BoolP("debug", "", configs.Debug, "Enable/Disable debug mode")
 	RootCmd.PersistentFlags().String("editor", "", "CLI command to open repos/folders (e.g. code, zed, idea). Overrides config.")
+	RootCmd.PersistentFlags().String("terminal", "", "Command to open repos/folders in a terminal. Overrides config.")
 	// RootCmd.PersistentFlags().StringP("colorscheme", "", configs.Output.ColorSchemeName, "Used only if 'output' is 'interactive'")
 
 	RootCmd.AddCommand(versionCmd)

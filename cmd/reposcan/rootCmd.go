@@ -149,6 +149,14 @@ func readFlags(cmd *cobra.Command, configs *config.Config) error {
 		(*configs).Editor = editor
 	}
 
+	terminal, err := cmd.Flags().GetString("terminal")
+	if err != nil {
+		return err
+	}
+	if terminal != "" {
+		(*configs).Terminal = terminal
+	}
+
 	return nil
 }
 

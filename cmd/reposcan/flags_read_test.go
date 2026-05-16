@@ -21,6 +21,7 @@ func TestReadFlags_AppliesAllFlags(t *testing.T) {
 	cmd.Flags().IntP("max-workers", "w", 8, "")
 	cmd.Flags().BoolP("debug", "", false, "")
 	cmd.Flags().String("editor", "", "")
+	cmd.Flags().String("terminal", "", "")
 	// cmd.Flags().StringP("colorscheme", "", "", "")
 
 	args := []string{
@@ -94,6 +95,7 @@ func TestReadTableOutput_SwitchToInteractiveOutput(t *testing.T) {
 	cmd.Flags().IntP("max-workers", "w", 8, "")
 	cmd.Flags().BoolP("debug", "", false, "")
 	cmd.Flags().String("editor", "", "")
+	cmd.Flags().String("terminal", "", "")
 	// cmd.Flags().StringP("colorscheme", "", "", "")
 
 	args := []string{
