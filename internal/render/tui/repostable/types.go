@@ -14,6 +14,18 @@ const (
 	tableDisplayFolders tableDisplayMode = 1
 )
 
+// SortKey picks which column the table rows are sorted by.
+type SortKey int
+
+const (
+	SortByRepo SortKey = iota
+	SortByBranch
+	SortByLastCommit
+	SortByState
+
+	sortKeyCount = 4
+)
+
 // rowRef maps a visual table row back to its source. In repos mode the table
 // is a tree: each repo header row may be followed by indented branch rows.
 type rowRef struct {
@@ -39,6 +51,10 @@ type Model struct {
 	expanded    map[string]bool                // repo ID -> branch rows shown
 	branchCache map[string][]gitx.BranchStatus // repo ID -> lazily fetched branches
 	rowRefs     []rowRef                       // parallel to table rows (repos mode)
+
+	// sort state — applied to filteredRepos and folders
+	sortKey SortKey
+	sortAsc bool
 
 	// folders mode
 	folders          []report.FolderEntry

@@ -129,6 +129,7 @@ reposcan
 | `d` | Delete the selected local folder (typed `YES` confirmation) |
 | `p` | Copy path to clipboard |
 | `r` | Refresh |
+| `s` / `Shift+S` | Cycle sort column (Repo → Branch → Last Commit → State) / toggle ascending ↔ descending. A small `▲`/`▼` marks the active sort column. Favorites stay pinned to the top. |
 | `/` | Search by repo/branch name |
 | `?` | Help popup |
 | `q` / `Esc` | Quit |

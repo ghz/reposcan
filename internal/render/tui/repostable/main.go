@@ -2,6 +2,7 @@
 package repostable
 
 import (
+	"sort"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/table"
@@ -13,7 +14,7 @@ import (
 
 func New(
 	theme theme.Theme,
-	report report.ScanReport,
+	scanReport report.ScanReport,
 	width int,
 	height int,
 ) Model {
@@ -21,16 +22,19 @@ func New(
 		width:         width,
 		height:        height,
 		theme:         theme,
-		report:        report,
-		filteredRepos: report.RepoStates,
+		report:        scanReport,
+		filteredRepos: append([]report.RepoState(nil), scanReport.RepoStates...),
 		filterQuery:   "",
 		displayMode:   tableDisplayRepos,
 		favorites:     map[string]bool{},
 		expanded:      map[string]bool{},
 		branchCache:   map[string][]gitx.BranchStatus{},
+		sortKey:       SortByRepo,
+		sortAsc:       true,
 	}
+	model.applySortToFilteredRepos()
 
-	cols := createColumns(width)
+	cols := createColumns(width, model.sortKey, model.sortAsc)
 	rows, refs := model.buildRepoRows()
 	model.rowRefs = refs
 
@@ -94,10 +98,93 @@ func (m *Model) UpdateWindowSize(width int, height int) Model {
 	m.height = height - 2
 
 	m.tbl.SetHeight(m.height)
-	cols := createColumns(m.width)
+	cols := createColumns(m.width, m.sortKey, m.sortAsc)
 	m.tbl.SetColumns(cols)
 
 	return *m
+}
+
+// CycleSort advances the sort key to the next column. The sort direction is
+// preserved. The default is SortByRepo / ascending.
+func (m *Model) CycleSort() {
+	m.sortKey = SortKey((int(m.sortKey) + 1) % sortKeyCount)
+	m.tbl.SetColumns(createColumns(m.width, m.sortKey, m.sortAsc))
+	m.Filter(m.filterQuery)
+}
+
+// ToggleSortDir flips between ascending and descending for the current sort key.
+func (m *Model) ToggleSortDir() {
+	m.sortAsc = !m.sortAsc
+	m.tbl.SetColumns(createColumns(m.width, m.sortKey, m.sortAsc))
+	m.Filter(m.filterQuery)
+}
+
+// applySortToFilteredRepos sorts m.filteredRepos in place using the current
+// sort key and direction. Stable so equal-key rows keep their relative order.
+func (m *Model) applySortToFilteredRepos() {
+	sort.SliceStable(m.filteredRepos, func(i, j int) bool {
+		a, b := m.filteredRepos[i], m.filteredRepos[j]
+		if !m.sortAsc {
+			a, b = b, a
+		}
+		return lessRepoState(a, b, m.sortKey)
+	})
+}
+
+// applySortToFilteredFolders sorts m.filteredFolders in place by the current
+// sort key. Folder rows without a backing repo sort to the end for repo-only
+// keys (branch, last commit, state) and alphabetically for "Repo".
+func (m *Model) applySortToFilteredFolders() {
+	sort.SliceStable(m.filteredFolders, func(i, j int) bool {
+		fa, fb := m.filteredFolders[i], m.filteredFolders[j]
+		if !m.sortAsc {
+			fa, fb = fb, fa
+		}
+		ra, okA := m.repoStatesByPath[fa.Path]
+		rb, okB := m.repoStatesByPath[fb.Path]
+
+		if m.sortKey == SortByRepo {
+			return strings.ToLower(fa.Name) < strings.ToLower(fb.Name)
+		}
+		// For repo-only keys, non-repo folders always sort after repos.
+		if okA != okB {
+			return okA
+		}
+		if !okA {
+			return strings.ToLower(fa.Name) < strings.ToLower(fb.Name)
+		}
+		return lessRepoState(ra, rb, m.sortKey)
+	})
+}
+
+// lessRepoState reports whether a should sort before b for the given key.
+func lessRepoState(a, b report.RepoState, key SortKey) bool {
+	switch key {
+	case SortByRepo:
+		return strings.ToLower(a.Repo) < strings.ToLower(b.Repo)
+	case SortByBranch:
+		return strings.ToLower(a.Branch) < strings.ToLower(b.Branch)
+	case SortByLastCommit:
+		return a.LastCommitTime.Before(b.LastCommitTime)
+	case SortByState:
+		return dirtinessScore(a) < dirtinessScore(b)
+	}
+	return false
+}
+
+// dirtinessScore is the State-column sort key: how "out of sync" a repo is.
+// Uncommitted files plus the sum of ahead/behind commits across remotes.
+func dirtinessScore(rs report.RepoState) int {
+	score := len(rs.UncommitedFiles)
+	for _, r := range rs.RemoteStatus {
+		if r.Ahead > 0 {
+			score += r.Ahead
+		}
+		if r.Behind > 0 {
+			score += r.Behind
+		}
+	}
+	return score
 }
 
 // Filter filters repo states based on repo name. Then update table based on filtered repos
@@ -114,7 +201,7 @@ func (m *Model) Filter(query string) {
 func (m *Model) filterRepos(query string) {
 	q := strings.ToLower(strings.TrimSpace(query))
 	if len(q) == 0 {
-		m.filteredRepos = m.report.RepoStates
+		m.filteredRepos = append([]report.RepoState(nil), m.report.RepoStates...)
 	} else {
 		m.filteredRepos = []report.RepoState{}
 		for _, rs := range m.report.RepoStates {
@@ -124,6 +211,10 @@ func (m *Model) filterRepos(query string) {
 			}
 		}
 	}
+
+	// Apply the user-chosen sort before pinning favorites to the top so the
+	// relative order inside each group respects the sort.
+	m.applySortToFilteredRepos()
 
 	// Favorites always appear first
 	if len(m.favorites) > 0 {
@@ -158,7 +249,7 @@ func (m *Model) filterRepos(query string) {
 func (m *Model) filterFolders(query string) {
 	q := strings.ToLower(strings.TrimSpace(query))
 	if len(q) == 0 {
-		m.filteredFolders = m.folders
+		m.filteredFolders = append([]report.FolderEntry(nil), m.folders...)
 	} else {
 		m.filteredFolders = []report.FolderEntry{}
 		for _, f := range m.folders {
@@ -168,6 +259,8 @@ func (m *Model) filterFolders(query string) {
 			}
 		}
 	}
+
+	m.applySortToFilteredFolders()
 
 	cursorPosition := m.tbl.Cursor()
 

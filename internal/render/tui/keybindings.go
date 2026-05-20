@@ -86,6 +86,11 @@ var reposTableKeybindings = []common.Keybinding{
 		ShortDesc:   "Refresh",
 	},
 	{
+		Key:         "s/S",
+		Description: "Cycle sort column (s) / toggle asc/desc (S)",
+		ShortDesc:   "Sort",
+	},
+	{
 		Key:         "/",
 		Description: "Search by repo/branch name",
 		ShortDesc:   "Search",

@@ -185,6 +185,12 @@ func (m Model) updateReposTable(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.loading = true
 			request := generateReport{configs: m.configs}
 			return m, request.Cmd()
+		case "s":
+			m.reposTable.CycleSort()
+			return m, nil
+		case "S":
+			m.reposTable.ToggleSortDir()
+			return m, nil
 		case "/":
 			m.pushFocus(FocusReposFilter)
 			return m, nil

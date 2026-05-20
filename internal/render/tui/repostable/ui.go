@@ -20,17 +20,26 @@ const (
 	LastCommitW  = 15
 )
 
-func createColumns(maxWidth int) []table.Column {
+func createColumns(maxWidth int, sortKey SortKey, sortAsc bool) []table.Column {
 	repoW := maxWidth * RepoW / 100
 	branchW := maxWidth * BranchW / 100
 	remoteStateW := maxWidth * RemoteStateW / 100
 	lastCommitW := maxWidth * LastCommitW / 100
 
+	titles := []string{"Repo", "Branch", "Last Commit", "State"}
+	arrow := " ▲"
+	if !sortAsc {
+		arrow = " ▼"
+	}
+	if int(sortKey) >= 0 && int(sortKey) < len(titles) {
+		titles[sortKey] += arrow
+	}
+
 	return []table.Column{
-		{Title: "Repo", Width: repoW},
-		{Title: "Branch", Width: branchW},
-		{Title: "Last Commit", Width: lastCommitW},
-		{Title: "State", Width: remoteStateW},
+		{Title: titles[SortByRepo], Width: repoW},
+		{Title: titles[SortByBranch], Width: branchW},
+		{Title: titles[SortByLastCommit], Width: lastCommitW},
+		{Title: titles[SortByState], Width: remoteStateW},
 	}
 }
 
