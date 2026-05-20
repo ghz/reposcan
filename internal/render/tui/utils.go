@@ -51,6 +51,47 @@ func (m *Model) applyViewMode() {
 	}
 }
 
+func (m *Model) removePathFromReport(path string) {
+	if strings.TrimSpace(path) == "" {
+		return
+	}
+
+	repoStates := make([]report.RepoState, 0, len(m.fullReport.RepoStates))
+	for _, rs := range m.fullReport.RepoStates {
+		if !samePath(rs.Path, path) {
+			repoStates = append(repoStates, rs)
+		}
+	}
+	m.fullReport.RepoStates = repoStates
+
+	folders := make([]report.FolderEntry, 0, len(m.fullReport.AllFolders))
+	for _, f := range m.fullReport.AllFolders {
+		if !samePath(f.Path, path) {
+			folders = append(folders, f)
+		}
+	}
+	m.fullReport.AllFolders = folders
+
+	favorites := make([]string, 0, len(m.configs.Favorites))
+	for _, favorite := range m.configs.Favorites {
+		if !samePath(favorite, path) {
+			favorites = append(favorites, favorite)
+		}
+	}
+	m.configs.Favorites = favorites
+	m.reposTable.SetFavorites(favorites)
+	m.applyViewMode()
+}
+
+func samePath(a string, b string) bool {
+	left := filepath.Clean(a)
+	right := filepath.Clean(b)
+	if runtime.GOOS == "windows" {
+		return strings.EqualFold(left, right)
+	}
+	return left == right
+}
+
 func makeAlert(t alerts.AlertType, message string) tea.Cmd {
 	return func() tea.Msg {
 		return alerts.AddAlertMsg{Msg: alerts.Alert{Type: t, Message: message}}

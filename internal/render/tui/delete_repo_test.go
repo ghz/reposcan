@@ -1,12 +1,14 @@
 package tui
 
 import (
+	"errors"
 	"os"
 	"strings"
 	"testing"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/mabd-dev/reposcan/internal/render/tui/alerts"
 	"github.com/mabd-dev/reposcan/internal/render/tui/repostable"
 	"github.com/mabd-dev/reposcan/internal/theme"
 	"github.com/mabd-dev/reposcan/pkg/report"
@@ -69,6 +71,68 @@ func TestDeleteRepoPopupRequiresYES(t *testing.T) {
 	got := updated.(Model)
 	if got.currentFocus() != FocusDeleteRepoPopup {
 		t.Fatalf("focus = %v, want FocusDeleteRepoPopup", got.currentFocus())
+	}
+}
+
+func TestDeleteRepoFailureReturnsToTableWithoutLoading(t *testing.T) {
+	m := testDeleteRepoModel(t)
+	m.loading = true
+
+	updated, cmd := m.Update(deleteRepoResultMsg{
+		repoName: "repo",
+		path:     m.reposTable.GetCurrentPath(),
+		err:      errors.New("locked"),
+	})
+	got := updated.(Model)
+
+	if got.currentFocus() != FocusReposTable {
+		t.Fatalf("focus = %v, want FocusReposTable", got.currentFocus())
+	}
+	if got.loading {
+		t.Fatal("loading = true, want false after failed delete")
+	}
+	if cmd == nil {
+		t.Fatal("cmd = nil, want error alert command")
+	}
+}
+
+func TestDeleteRepoSuccessRemovesPathWithoutLoadingOrRefresh(t *testing.T) {
+	m := testDeleteRepoModel(t)
+	repoPath := m.reposTable.GetCurrentPath()
+	otherPath := t.TempDir()
+	m.fullReport = report.ScanReport{
+		RepoStates: []report.RepoState{
+			{ID: "repo-id", Path: repoPath, Repo: "repo"},
+			{ID: "other-id", Path: otherPath, Repo: "other"},
+		},
+		AllFolders: []report.FolderEntry{
+			{Path: repoPath, Name: "repo", IsRepo: true},
+			{Path: otherPath, Name: "other", IsRepo: true},
+		},
+	}
+
+	updated, cmd := m.Update(deleteRepoResultMsg{
+		repoName: "repo",
+		path:     repoPath,
+	})
+	got := updated.(Model)
+
+	if got.currentFocus() != FocusReposTable {
+		t.Fatalf("focus = %v, want FocusReposTable", got.currentFocus())
+	}
+	if got.loading {
+		t.Fatal("loading = true, want false after successful delete")
+	}
+	if len(got.fullReport.RepoStates) != 1 || got.fullReport.RepoStates[0].Path != otherPath {
+		t.Fatalf("repo states after delete = %#v, want only %q", got.fullReport.RepoStates, otherPath)
+	}
+	if len(got.fullReport.AllFolders) != 1 || got.fullReport.AllFolders[0].Path != otherPath {
+		t.Fatalf("folders after delete = %#v, want only %q", got.fullReport.AllFolders, otherPath)
+	}
+
+	msg := cmd()
+	if _, ok := msg.(alerts.AddAlertMsg); !ok {
+		t.Fatalf("delete success command = %T, want alerts.AddAlertMsg", msg)
 	}
 }
 

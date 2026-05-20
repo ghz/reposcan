@@ -112,6 +112,7 @@ type createRepoResultMsg struct {
 
 type deleteRepoResultMsg struct {
 	repoName string
+	path     string
 	err      error
 }
 

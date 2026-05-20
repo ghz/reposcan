@@ -521,7 +521,7 @@ func createGitHubRepoCmd(name, path string, private bool) tea.Cmd {
 func deleteRepoCmd(targetName, path string) tea.Cmd {
 	return func() tea.Msg {
 		if strings.TrimSpace(path) == "" {
-			return deleteRepoResultMsg{repoName: targetName, err: errors.New("empty folder path")}
+			return deleteRepoResultMsg{repoName: targetName, path: path, err: errors.New("empty folder path")}
 		}
 
 		errCh := make(chan error, 1)
@@ -531,9 +531,9 @@ func deleteRepoCmd(targetName, path string) tea.Cmd {
 
 		select {
 		case err := <-errCh:
-			return deleteRepoResultMsg{repoName: targetName, err: err}
+			return deleteRepoResultMsg{repoName: targetName, path: path, err: err}
 		case <-time.After(deleteRepoTimeout):
-			return deleteRepoResultMsg{repoName: targetName, err: errors.New("delete timed out; the folder may be locked by another process")}
+			return deleteRepoResultMsg{repoName: targetName, path: path, err: errors.New("delete timed out; the folder may be locked by another process")}
 		}
 	}
 }
@@ -619,24 +619,26 @@ func defaultUpdate(m Model, msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case createRepoResultMsg:
+		m.focusReposTable()
+		m.loading = false
 		if msg.err != nil {
 			return m, makeAlert(alerts.MsgTypeError, msg.err.Error())
 		}
-		m.loading = true
 		request := generateReport{configs: m.configs}
 		return m, tea.Batch(makeAlert(alerts.AlertTypeInfo, "Repo created ("+msg.label+")"), request.Cmd())
 
 	case deleteRepoResultMsg:
+		m.focusReposTable()
+		m.loading = false
 		if msg.err != nil {
 			return m, makeAlert(alerts.MsgTypeError, "delete failed: "+msg.err.Error())
 		}
-		m.loading = true
-		request := generateReport{configs: m.configs}
+		m.removePathFromReport(msg.path)
 		label := msg.repoName
 		if label == "" {
 			label = "folder"
 		}
-		return m, tea.Batch(makeAlert(alerts.AlertTypeInfo, "Folder deleted: "+label), request.Cmd())
+		return m, makeAlert(alerts.AlertTypeInfo, "Folder deleted: "+label)
 
 	case alerts.AddAlertMsg, alerts.TickMsg:
 		var cmd tea.Cmd

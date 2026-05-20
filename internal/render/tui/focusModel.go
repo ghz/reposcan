@@ -112,6 +112,13 @@ func (m *Model) resetCurrentModel() {
 	}
 }
 
+func (m *Model) focusReposTable() {
+	m.ensureFocusStack()
+	m.blurCurrentModel()
+	m.focusStack = []FocusState{FocusReposTable}
+	m.focusCurrentModel()
+}
+
 func (m *Model) keybindings() []common.Keybinding {
 	switch m.currentFocus() {
 	case FocusReposTable:
