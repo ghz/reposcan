@@ -153,3 +153,42 @@ func TestGitHubCreateRepoRequiresName(t *testing.T) {
 		t.Fatalf("GitHubCreateRepo() error = %q, want empty-name message", err.Error())
 	}
 }
+
+func TestGetLastCommitTime(t *testing.T) {
+	dir := t.TempDir()
+	if err := InitRepo(dir); err != nil {
+		t.Fatalf("InitRepo() error = %v", err)
+	}
+
+	// 1. Check newly initialized repo has no commits
+	tZero, err := GetLastCommitTime(dir)
+	if err != nil {
+		t.Fatalf("GetLastCommitTime() empty repo error = %v", err)
+	}
+	if !tZero.IsZero() {
+		t.Fatalf("GetLastCommitTime() empty repo got %v, want zero time", tZero)
+	}
+
+	// 2. Make a commit and check commit time is captured
+	mustGit(t, dir, "config", "user.email", "test@example.com")
+	mustGit(t, dir, "config", "user.name", "Test")
+	mustGit(t, dir, "config", "commit.gpgsign", "false")
+
+	if err := os.WriteFile(filepath.Join(dir, "file.txt"), []byte("hello"), 0o644); err != nil {
+		t.Fatalf("WriteFile() error = %v", err)
+	}
+	if err := AddAll(dir); err != nil {
+		t.Fatalf("AddAll() error = %v", err)
+	}
+	if err := GitCommit(dir, "initial"); err != nil {
+		t.Fatalf("GitCommit() error = %v", err)
+	}
+
+	tCommit, err := GetLastCommitTime(dir)
+	if err != nil {
+		t.Fatalf("GetLastCommitTime() with commit error = %v", err)
+	}
+	if tCommit.IsZero() {
+		t.Fatal("GetLastCommitTime() with commit returned zero time")
+	}
+}

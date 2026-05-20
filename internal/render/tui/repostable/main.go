@@ -45,7 +45,7 @@ func New(
 	setKeymaps(km)
 
 	if len(rows) == 0 {
-		t.SetRows([]table.Row{{"", "", ""}})
+		t.SetRows([]table.Row{{"", "", "", ""}})
 	}
 
 	t.SetStyles(table.Styles{
@@ -144,7 +144,7 @@ func (m *Model) filterRepos(query string) {
 	rows, refs := m.buildRepoRows()
 	m.rowRefs = refs
 	if len(rows) == 0 {
-		rows = []table.Row{{"", "", ""}}
+		rows = []table.Row{{"", "", "", ""}}
 	}
 	m.tbl.SetRows(rows)
 
@@ -173,7 +173,7 @@ func (m *Model) filterFolders(query string) {
 
 	rows := createFolderRows(m.filteredFolders, m.repoStatesByPath, m.theme)
 	if len(rows) == 0 {
-		rows = []table.Row{{"", "", ""}}
+		rows = []table.Row{{"", "", "", ""}}
 	}
 	m.tbl.SetRows(rows)
 
@@ -206,7 +206,7 @@ func (m *Model) UpdateRepoState(_ int, newState report.RepoState) {
 	rows, refs := m.buildRepoRows()
 	m.rowRefs = refs
 	if len(rows) == 0 {
-		rows = []table.Row{{"", "", ""}}
+		rows = []table.Row{{"", "", "", ""}}
 	}
 	m.tbl.SetRows(rows)
 }
@@ -310,7 +310,7 @@ func (m *Model) setExpanded(expand bool) {
 	rows, refs := m.buildRepoRows()
 	m.rowRefs = refs
 	if len(rows) == 0 {
-		rows = []table.Row{{"", "", ""}}
+		rows = []table.Row{{"", "", "", ""}}
 	}
 	m.tbl.SetRows(rows)
 	m.SetCursorByRepoID(rs.ID)

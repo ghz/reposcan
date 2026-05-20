@@ -9,7 +9,9 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
+	"time"
 )
 
 // RemoteStatus holds the ahead/behind status for a specific remote branch
@@ -481,4 +483,29 @@ func RunGitCommand(dir string, args ...string) (string, error) {
 		return "", err
 	}
 	return stdout.String(), nil
+}
+
+// GetLastCommitTime returns the time of the last commit for the repository at path.
+// If the repository has no commits, it returns a zero time.Time.
+func GetLastCommitTime(path string) (time.Time, error) {
+	out, err := RunGitCommand(path, "log", "-1", "--format=%ct")
+	if err != nil {
+		errStr := strings.ToLower(err.Error())
+		// If it's a repo with no commits (e.g., newly initialized), return zero time without error.
+		if strings.Contains(errStr, "does not have any commits yet") ||
+			strings.Contains(errStr, "bad default revision") ||
+			strings.Contains(errStr, "fatal: your current branch") {
+			return time.Time{}, nil
+		}
+		return time.Time{}, err
+	}
+	str := strings.TrimSpace(out)
+	if str == "" {
+		return time.Time{}, nil
+	}
+	sec, err := strconv.ParseInt(str, 10, 64)
+	if err != nil {
+		return time.Time{}, err
+	}
+	return time.Unix(sec, 0), nil
 }

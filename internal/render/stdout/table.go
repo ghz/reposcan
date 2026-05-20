@@ -4,18 +4,20 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/mabd-dev/reposcan/internal/utils"
 	"github.com/mabd-dev/reposcan/pkg/report"
 )
 
 // RenderReposTable renders the per-repository rows for a ScanReport as a table.
 func RenderReposTable(r report.ScanReport) {
 	// Table header
-	fmt.Printf("%s %s %s\n",
+	fmt.Printf("%s %s %s %s\n",
 		CyanBold("%-*s", RepoW, "Repo"),
 		CyanBold("%-*s", BranchW, "Branch"),
+		CyanBold("%-*s", LastCommitW, "Last Commit"),
 		CyanBold("%-*s", RemoteStateW, "State"),
 	)
-	fmt.Println(strings.Repeat("─", RepoW+1+BranchW+RemoteStateW+1))
+	fmt.Println(strings.Repeat("─", RepoW+1+BranchW+1+LastCommitW+1+RemoteStateW+1))
 
 	for _, rs := range r.RepoStates {
 		renderRepoState(rs)
@@ -35,11 +37,15 @@ func renderRepoState(rs report.RepoState) {
 	}
 	branchCell := BlueS("%-*s", BranchW, truncateRunes(rs.Branch, BranchW))
 
+	lastCommitStr := utils.RelativeTime(rs.LastCommitTime)
+	lastCommitCell := DimS("%-*s", LastCommitW, truncateRunes(lastCommitStr, LastCommitW))
+
 	remoteStateStr := getStateColumnStr(rs)
 
-	fmt.Printf("%s %s %s\n",
+	fmt.Printf("%s %s %s %s\n",
 		repoCell,
 		branchCell,
+		lastCommitCell,
 		remoteStateStr,
 	)
 }

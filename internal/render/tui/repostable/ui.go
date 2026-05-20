@@ -9,23 +9,27 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/mabd-dev/reposcan/internal/gitx"
 	"github.com/mabd-dev/reposcan/internal/theme"
+	"github.com/mabd-dev/reposcan/internal/utils"
 	"github.com/mabd-dev/reposcan/pkg/report"
 )
 
 const (
-	RepoW        = 30
-	BranchW      = 30
-	RemoteStateW = 40
+	RepoW        = 25
+	BranchW      = 25
+	RemoteStateW = 35
+	LastCommitW  = 15
 )
 
 func createColumns(maxWidth int) []table.Column {
 	repoW := maxWidth * RepoW / 100
 	branchW := maxWidth * BranchW / 100
 	remoteStateW := maxWidth * RemoteStateW / 100
+	lastCommitW := maxWidth * LastCommitW / 100
 
 	return []table.Column{
 		{Title: "Repo", Width: repoW},
 		{Title: "Branch", Width: branchW},
+		{Title: "Last Commit", Width: lastCommitW},
 		{Title: "State", Width: remoteStateW},
 	}
 }
@@ -66,11 +70,22 @@ func repoRow(rs report.RepoState, expanded, favorite bool, t theme.Theme) table.
 	}
 	name += rs.Repo
 
+	lastCommitStr := utils.RelativeTime(rs.LastCommitTime)
+
 	return table.Row{
 		name,
 		rs.Branch,
-		getStateColumnStr(rs, t),
+		preserveBackground(t.Styles.Muted.Render(lastCommitStr)),
+		preserveBackground(getStateColumnStr(rs, t)),
 	}
+}
+
+// preserveBackground replaces lipgloss's full ANSI reset (\x1b[0m) with a
+// foreground-only reset (\x1b[39m) so that an outer background (e.g. the
+// selected-row highlight applied by bubbles/table) is not cleared by the
+// per-token styling inside a cell.
+func preserveBackground(s string) string {
+	return strings.ReplaceAll(s, "\x1b[0m", "\x1b[39m")
 }
 
 // branchRow renders one indented branch row beneath its repo. The current
@@ -88,8 +103,9 @@ func branchRow(b gitx.BranchStatus, t theme.Theme) table.Row {
 
 	return table.Row{
 		indent + b.Name,
-		upstream,
-		getBranchStateStr(b, t),
+		preserveBackground(upstream),
+		preserveBackground(t.Styles.Muted.Render("—")),
+		preserveBackground(getBranchStateStr(b, t)),
 	}
 }
 
@@ -177,19 +193,22 @@ func createFolderRows(folders []report.FolderEntry, reposByPath map[string]repor
 		typeLabel := t.Styles.Muted.Render("dir")
 		branch := t.Styles.Muted.Render("—")
 		state := t.Styles.Muted.Render("—")
+		lastCommit := t.Styles.Muted.Render("—")
 
 		if f.IsRepo {
 			typeLabel = t.Styles.Base.Foreground(t.Colors.Info).Render("repo")
 			if rs, ok := reposByPath[f.Path]; ok {
 				branch = rs.Branch
 				state = getStateColumnStr(rs, t)
+				lastCommit = t.Styles.Muted.Render(utils.RelativeTime(rs.LastCommitTime))
 			}
 		}
 
 		rows = append(rows, table.Row{
-			f.Name + "  " + typeLabel,
-			branch,
-			state,
+			preserveBackground(f.Name + "  " + typeLabel),
+			preserveBackground(branch),
+			preserveBackground(lastCommit),
+			preserveBackground(state),
 		})
 	}
 	return rows

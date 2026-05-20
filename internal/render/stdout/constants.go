@@ -6,7 +6,8 @@ import (
 
 const (
 	RepoW        = 24
-	BranchW      = 30
+	BranchW      = 20
+	LastCommitW  = 16
 	UncommW      = 3
 	AheadW       = 3
 	BehindW      = 3

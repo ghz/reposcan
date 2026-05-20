@@ -21,6 +21,7 @@ type RepoState struct {
 	Branch          string         `json:"branch"`
 	UncommitedFiles []string       `json:"uncommitedFiles"`
 	RemoteStatus    []RemoteStatus `json:"remoteStatus"`
+	LastCommitTime  time.Time      `json:"lastCommitTime"`
 }
 
 // FolderEntry represents a direct subdirectory of a scan root, which may or
